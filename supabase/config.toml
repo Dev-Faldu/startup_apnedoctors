@@ -1,0 +1,15 @@
+project_id = "wwtkdgyywnaijxkdkguo"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+
+[functions.ai-triage]
+verify_jwt = false
+
+[functions.ai-vision-analysis]
+verify_jwt = false
+
+[functions.medical-report]
+verify_jwt = false
