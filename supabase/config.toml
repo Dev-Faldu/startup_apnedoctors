@@ -13,3 +13,9 @@ verify_jwt = false
 
 [functions.medical-report]
 verify_jwt = false
+
+[functions.ai-live-triage]
+verify_jwt = false
+
+[functions.ai-live-vision]
+verify_jwt = false
