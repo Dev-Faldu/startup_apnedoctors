@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PatientInfo, TriageResult, VisionAnalysisResult, MedicalReport, AssessmentStep } from '@/types/assessment';
 import { toast } from 'sonner';
+import { saveAssessment, saveTriageReport } from './useAssessmentPersist';
 
 export function useAssessment() {
   const [currentStep, setCurrentStep] = useState<AssessmentStep>('symptoms');
@@ -11,6 +12,7 @@ export function useAssessment() {
   const [report, setReport] = useState<MedicalReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [assessmentId, setAssessmentId] = useState<string | null>(null);
 
   const submitSymptoms = useCallback(async (info: PatientInfo) => {
     setIsLoading(true);
@@ -77,6 +79,16 @@ export function useAssessment() {
     
     try {
       console.log('Generating medical report...');
+      
+      // Save assessment to database first
+      let savedAssessmentId = assessmentId;
+      if (!savedAssessmentId && patientInfo) {
+        savedAssessmentId = await saveAssessment(patientInfo, triageResult, visionResult);
+        if (savedAssessmentId) {
+          setAssessmentId(savedAssessmentId);
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('medical-report', {
         body: {
           patientInfo,
@@ -94,6 +106,12 @@ export function useAssessment() {
       console.log('Report generated:', data);
       setReport(data);
       setCurrentStep('report');
+
+      // Save triage report to database
+      if (savedAssessmentId && triageResult) {
+        await saveTriageReport(savedAssessmentId, data, triageResult);
+      }
+
       toast.success('Medical report generated!');
     } catch (err) {
       console.error('Error generating report:', err);
@@ -101,7 +119,7 @@ export function useAssessment() {
     } finally {
       setIsLoading(false);
     }
-  }, [patientInfo, triageResult, visionResult]);
+  }, [patientInfo, triageResult, visionResult, assessmentId]);
 
   const resetAssessment = useCallback(() => {
     setCurrentStep('symptoms');
@@ -110,6 +128,7 @@ export function useAssessment() {
     setVisionResult(null);
     setReport(null);
     setCapturedImage(null);
+    setAssessmentId(null);
   }, []);
 
   const goToStep = useCallback((step: AssessmentStep) => {
