@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Activity, Stethoscope } from "lucide-react";
+import { Menu, X, Activity, Stethoscope, Video } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,8 +41,13 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* CTA Button */}
           <div className="hidden md:flex items-center gap-4">
+            <Link to="/live">
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                <Video className="h-4 w-4" />
+                Live AI
+              </Button>
+            </Link>
             <Link to="/doctor">
               <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
                 <Stethoscope className="h-4 w-4" />
