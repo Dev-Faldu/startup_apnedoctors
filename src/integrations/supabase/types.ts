@@ -14,7 +14,151 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assessments: {
+        Row: {
+          additional_info: string | null
+          ai_triage_output: Json | null
+          ai_vision_output: Json | null
+          body_part: string
+          created_at: string
+          duration: string
+          id: string
+          image_url: string | null
+          pain_level: number
+          patient_id: string | null
+          session_id: string
+          status: string
+          symptoms: string
+          updated_at: string
+        }
+        Insert: {
+          additional_info?: string | null
+          ai_triage_output?: Json | null
+          ai_vision_output?: Json | null
+          body_part: string
+          created_at?: string
+          duration: string
+          id?: string
+          image_url?: string | null
+          pain_level: number
+          patient_id?: string | null
+          session_id?: string
+          status?: string
+          symptoms: string
+          updated_at?: string
+        }
+        Update: {
+          additional_info?: string | null
+          ai_triage_output?: Json | null
+          ai_vision_output?: Json | null
+          body_part?: string
+          created_at?: string
+          duration?: string
+          id?: string
+          image_url?: string | null
+          pain_level?: number
+          patient_id?: string | null
+          session_id?: string
+          status?: string
+          symptoms?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      triage_reports: {
+        Row: {
+          assessment_id: string
+          chief_complaint: string | null
+          confidence_score: number | null
+          created_at: string
+          doctor_notes: string | null
+          doctor_reviewed: boolean
+          id: string
+          medical_summary: string
+          possible_conditions: Json | null
+          recommendations: Json | null
+          red_flags: Json | null
+          reviewed_at: string | null
+          risk_level: string
+          triage_level: number
+        }
+        Insert: {
+          assessment_id: string
+          chief_complaint?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          doctor_notes?: string | null
+          doctor_reviewed?: boolean
+          id?: string
+          medical_summary: string
+          possible_conditions?: Json | null
+          recommendations?: Json | null
+          red_flags?: Json | null
+          reviewed_at?: string | null
+          risk_level: string
+          triage_level: number
+        }
+        Update: {
+          assessment_id?: string
+          chief_complaint?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          doctor_notes?: string | null
+          doctor_reviewed?: boolean
+          id?: string
+          medical_summary?: string
+          possible_conditions?: Json | null
+          recommendations?: Json | null
+          red_flags?: Json | null
+          reviewed_at?: string | null
+          risk_level?: string
+          triage_level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triage_reports_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

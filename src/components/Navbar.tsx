@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Activity } from "lucide-react";
+import { Menu, X, Activity, Stethoscope } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,12 +43,17 @@ const Navbar = () => {
 
           {/* CTA Button */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="heroOutline" size="sm">
-              Try Demo
-            </Button>
-            <Button variant="hero" size="sm">
-              Start Assessment
-            </Button>
+            <Link to="/doctor">
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                <Stethoscope className="h-4 w-4" />
+                Doctor Portal
+              </Button>
+            </Link>
+            <Link to="/assessment">
+              <Button variant="hero" size="sm">
+                Start Assessment
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -74,12 +80,17 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4">
-                <Button variant="heroOutline" size="sm">
-                  Try Demo
-                </Button>
-                <Button variant="hero" size="sm">
-                  Start Assessment
-                </Button>
+                <Link to="/doctor" onClick={() => setIsOpen(false)}>
+                  <Button variant="ghost" size="sm" className="w-full gap-2">
+                    <Stethoscope className="h-4 w-4" />
+                    Doctor Portal
+                  </Button>
+                </Link>
+                <Link to="/assessment" onClick={() => setIsOpen(false)}>
+                  <Button variant="hero" size="sm" className="w-full">
+                    Start Assessment
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
