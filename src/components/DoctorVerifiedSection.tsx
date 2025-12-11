@@ -1,4 +1,5 @@
 import { Building2, Stethoscope, ShieldCheck, Award } from "lucide-react";
+import { usePlatformStats } from "@/hooks/usePlatformStats";
 
 const badges = [
   {
@@ -19,6 +20,8 @@ const badges = [
 ];
 
 const DoctorVerifiedSection = () => {
+  const { stats, isLoading } = usePlatformStats();
+
   return (
     <section id="about" className="relative py-24 overflow-hidden">
       {/* Background */}
@@ -66,9 +69,19 @@ const DoctorVerifiedSection = () => {
 
             {/* Status Indicators */}
             <div className="flex flex-wrap justify-center gap-6 mt-8">
-              <StatusIndicator label="Active Status" value="Operational" isActive />
-              <StatusIndicator label="Patients Screened" value="500+" />
-              <StatusIndicator label="Accuracy Rate" value="94.7%" />
+              <StatusIndicator 
+                label="Active Status" 
+                value={stats.isOperational ? "Operational" : "Offline"} 
+                isActive={stats.isOperational} 
+              />
+              <StatusIndicator 
+                label="Patients Screened" 
+                value={isLoading ? "..." : `${stats.patientsScreened}+`} 
+              />
+              <StatusIndicator 
+                label="Accuracy Rate" 
+                value={isLoading ? "..." : `${stats.accuracyRate}%`} 
+              />
             </div>
           </div>
         </div>
