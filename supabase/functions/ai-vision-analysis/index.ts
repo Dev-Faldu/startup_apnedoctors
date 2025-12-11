@@ -52,7 +52,15 @@ serve(async (req) => {
       { role: "system", content: VISION_SYSTEM_PROMPT }
     ];
 
-    if (imageBase64) {
+    // Validate image data - check for empty or invalid data URLs
+    const isValidImage = imageBase64 && 
+      typeof imageBase64 === 'string' && 
+      imageBase64.length > 100 &&
+      !imageBase64.endsWith('data:,') &&
+      imageBase64 !== 'data:,';
+
+    if (isValidImage) {
+      console.log("Valid image provided, length:", imageBase64.length);
       messages.push({
         role: "user",
         content: [
@@ -71,13 +79,13 @@ Please provide a detailed orthopedic visual assessment in the required JSON form
         ]
       });
     } else {
-      // Simulated analysis when no image provided (for demo purposes)
-      console.log("No image provided, generating simulated analysis");
+      // Text-only analysis when no valid image provided
+      console.log("No valid image provided, using text-only analysis");
       messages.push({
         role: "user",
         content: `The patient reports an issue with their ${bodyPart || "affected area"}. ${additionalContext || ""}
         
-Based on the description, provide a preliminary visual assessment guide in JSON format. Note that no actual image was provided for analysis.`
+Based on the description, provide a preliminary assessment guide in JSON format. Note that no actual image was provided for visual analysis, so set confidenceScore to 50 and include a note that visual examination is recommended.`
       });
     }
 
