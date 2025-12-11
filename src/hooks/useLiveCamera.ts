@@ -46,11 +46,25 @@ export const useLiveCamera = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
+    // Ensure video has valid dimensions before capturing
+    if (video.videoWidth === 0 || video.videoHeight === 0 || video.readyState < 2) {
+      console.log('Video not ready for capture yet');
+      return null;
+    }
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
 
-    return canvas.toDataURL('image/jpeg', 0.8);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    
+    // Validate the captured image has actual content
+    if (dataUrl.length < 1000) {
+      console.log('Captured frame too small, likely empty');
+      return null;
+    }
+
+    return dataUrl;
   }, []);
 
   useEffect(() => {
