@@ -1,7 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Scan, Shield, Zap } from "lucide-react";
 
 const CTASection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative py-24 overflow-hidden">
       {/* Background */}
@@ -32,7 +35,12 @@ const CTASection = () => {
             </p>
 
             {/* CTA Button */}
-            <Button variant="hero" size="xl" className="group mb-8">
+            <Button 
+              variant="hero" 
+              size="xl" 
+              className="group mb-8"
+              onClick={() => navigate('/assessment')}
+            >
               Start AI Injury Scan
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
