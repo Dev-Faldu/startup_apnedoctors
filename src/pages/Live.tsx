@@ -32,6 +32,7 @@ const Live = () => {
     videoRef,
     canvasRef,
     isActive: isCameraActive,
+    isVideoReady,
     error: cameraError,
     startCamera,
     stopCamera,
@@ -84,17 +85,29 @@ const Live = () => {
     }
     startListening();
     setIsSessionActive(true);
-
-    // Start periodic frame analysis
-    frameIntervalRef.current = setInterval(async () => {
-      const frame = captureFrame();
-      if (frame) {
-        setIsAnalyzingFrame(true);
-        await analyzeFrame(frame);
-        setIsAnalyzingFrame(false);
-      }
-    }, 5000); // Analyze every 5 seconds
   };
+
+  // Start frame analysis only when video is ready
+  useEffect(() => {
+    if (isSessionActive && isVideoReady) {
+      console.log('Video ready, starting frame analysis interval');
+      frameIntervalRef.current = setInterval(async () => {
+        const frame = captureFrame();
+        if (frame) {
+          setIsAnalyzingFrame(true);
+          await analyzeFrame(frame);
+          setIsAnalyzingFrame(false);
+        }
+      }, 5000);
+    }
+
+    return () => {
+      if (frameIntervalRef.current) {
+        clearInterval(frameIntervalRef.current);
+        frameIntervalRef.current = null;
+      }
+    };
+  }, [isSessionActive, isVideoReady, captureFrame, analyzeFrame]);
 
   const handleEndSession = () => {
     stopListening();
@@ -155,6 +168,12 @@ const Live = () => {
                   muted
                   className="w-full h-full object-cover"
                 />
+                {!isVideoReady && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 text-muted-foreground">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                    <p>Initializing camera...</p>
+                  </div>
+                )}
                 <VisionOverlay
                   detections={latestVision?.detections || []}
                   concernLevel={latestVision?.concernLevel || 'low'}
