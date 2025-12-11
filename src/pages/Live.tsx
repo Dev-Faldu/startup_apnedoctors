@@ -40,6 +40,7 @@ const Live = () => {
 
   const {
     session,
+    dbSessionId,
     isProcessing,
     currentTriage,
     latestVision,
@@ -76,7 +77,11 @@ const Live = () => {
 
   const handleStartSession = async () => {
     await startCamera();
-    startSession();
+    const sessionId = await startSession();
+    if (!sessionId) {
+      stopCamera();
+      return;
+    }
     startListening();
     setIsSessionActive(true);
 

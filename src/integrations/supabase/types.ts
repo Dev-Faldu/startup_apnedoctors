@@ -73,6 +73,120 @@ export type Database = {
           },
         ]
       }
+      live_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          patient_id: string | null
+          started_at: string
+          status: string
+          summary: string | null
+          triage_level: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          patient_id?: string | null
+          started_at?: string
+          status?: string
+          summary?: string | null
+          triage_level?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          patient_id?: string | null
+          started_at?: string
+          status?: string
+          summary?: string | null
+          triage_level?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_transcripts: {
+        Row: {
+          content: string
+          id: string
+          role: string
+          session_id: string
+          timestamp: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          role: string
+          session_id: string
+          timestamp?: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          role?: string
+          session_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_transcripts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_vision_detections: {
+        Row: {
+          confidence: number | null
+          detected_at: string
+          detection_type: string
+          id: string
+          location: string | null
+          session_id: string
+          severity: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          detected_at?: string
+          detection_type: string
+          id?: string
+          location?: string | null
+          session_id: string
+          severity?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          detected_at?: string
+          detection_type?: string
+          id?: string
+          location?: string | null
+          session_id?: string
+          severity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_vision_detections_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           created_at: string
