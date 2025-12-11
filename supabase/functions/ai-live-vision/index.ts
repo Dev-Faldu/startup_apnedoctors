@@ -42,12 +42,29 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    // Validate image data - check for empty or invalid data URLs
+    const isValidImage = imageBase64 && 
+      typeof imageBase64 === 'string' && 
+      imageBase64.length > 100 && // A valid base64 image should be much longer
+      !imageBase64.endsWith('data:,') &&
+      imageBase64 !== 'data:,';
+
+    if (!isValidImage) {
+      console.log('Invalid or empty image data received, skipping vision analysis');
+      return new Response(JSON.stringify({
+        detections: [],
+        overallAssessment: 'Waiting for valid image capture',
+        concernLevel: 'low',
+        recommendations: [],
+        disclaimer: 'Please ensure camera is active and capturing properly.',
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const messages: any[] = [
       { role: 'system', content: LIVE_VISION_PROMPT },
-    ];
-
-    if (imageBase64) {
-      messages.push({
+      {
         role: 'user',
         content: [
           {
@@ -61,18 +78,8 @@ serve(async (req) => {
             },
           },
         ],
-      });
-    } else {
-      return new Response(JSON.stringify({
-        detections: [],
-        overallAssessment: 'No image provided for analysis',
-        concernLevel: 'low',
-        recommendations: [],
-        disclaimer: 'Please capture an image for visual assessment.',
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+      },
+    ];
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
