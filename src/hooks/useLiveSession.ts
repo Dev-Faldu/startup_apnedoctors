@@ -8,13 +8,19 @@ export const useLiveSession = () => {
   const [session, setSession] = useState<LiveSession | null>(null);
   const [dbSessionId, setDbSessionId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const [currentTriage, setCurrentTriage] = useState<LiveTriageResult | null>(null);
   const [latestVision, setLatestVision] = useState<LiveVisionResult | null>(null);
+  const [visionError, setVisionError] = useState<string | null>(null);
+  const [triageError, setTriageError] = useState<string | null>(null);
   const conversationHistoryRef = useRef<{ role: string; content: string }[]>([]);
 
-  // Subscribe to real-time transcript updates
+  // Subscribe to real-time updates
   useEffect(() => {
     if (!dbSessionId) return;
+
+    console.log('Setting up real-time subscriptions for session:', dbSessionId);
+    setIsConnected(true);
 
     const channel = supabase
       .channel(`session-${dbSessionId}`)
@@ -27,7 +33,7 @@ export const useLiveSession = () => {
           filter: `session_id=eq.${dbSessionId}`,
         },
         (payload) => {
-          console.log('Real-time transcript:', payload.new);
+          console.log('Real-time transcript received:', payload.new);
         }
       )
       .on(
@@ -42,15 +48,34 @@ export const useLiveSession = () => {
           console.log('Real-time vision detection:', payload.new);
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'live_sessions',
+          filter: `id=eq.${dbSessionId}`,
+        },
+        (payload) => {
+          console.log('Session updated:', payload.new);
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+        setIsConnected(status === 'SUBSCRIBED');
+      });
 
     return () => {
+      console.log('Cleaning up subscriptions');
       supabase.removeChannel(channel);
+      setIsConnected(false);
     };
   }, [dbSessionId]);
 
   const startSession = useCallback(async () => {
     try {
+      console.log('Starting new live session...');
+      
       // Create session in database
       const { data: dbSession, error } = await supabase
         .from('live_sessions')
@@ -61,7 +86,10 @@ export const useLiveSession = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error creating session:', error);
+        throw error;
+      }
 
       setDbSessionId(dbSession.id);
 
@@ -71,18 +99,27 @@ export const useLiveSession = () => {
         messages: [],
         visionResults: [],
       };
+      
       setSession(newSession);
       conversationHistoryRef.current = [];
       setCurrentTriage(null);
       setLatestVision(null);
+      setVisionError(null);
+      setTriageError(null);
 
-      console.log('Session started:', dbSession.id);
+      console.log('Session started successfully:', dbSession.id);
+      
+      toast({
+        title: 'Session Started',
+        description: 'Your AI medical consultation is now active.',
+      });
+
       return dbSession.id;
     } catch (error) {
       console.error('Failed to start session:', error);
       toast({
         title: 'Session Error',
-        description: 'Failed to start consultation session.',
+        description: 'Failed to start consultation session. Please try again.',
         variant: 'destructive',
       });
       return null;
@@ -93,6 +130,8 @@ export const useLiveSession = () => {
     if (!session || !dbSessionId) return;
 
     try {
+      console.log('Ending session:', dbSessionId);
+      
       // Update session in database
       const { error } = await supabase
         .from('live_sessions')
@@ -106,7 +145,10 @@ export const useLiveSession = () => {
         })
         .eq('id', dbSessionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating session:', error);
+        throw error;
+      }
 
       setSession({
         ...session,
@@ -114,11 +156,21 @@ export const useLiveSession = () => {
         finalTriage: currentTriage || undefined,
       });
 
-      console.log('Session ended:', dbSessionId);
+      toast({
+        title: 'Session Complete',
+        description: `Triage level: ${currentTriage?.triageLevel || 'GREEN'}`,
+      });
+
+      console.log('Session ended successfully');
     } catch (error) {
       console.error('Failed to end session:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save session data.',
+        variant: 'destructive',
+      });
     }
-  }, [session, dbSessionId, currentTriage]);
+  }, [session, dbSessionId, currentTriage, toast]);
 
   const addMessage = useCallback(async (role: 'user' | 'assistant', content: string) => {
     const message: LiveMessage = {
@@ -138,13 +190,19 @@ export const useLiveSession = () => {
     // Save to database
     if (dbSessionId) {
       try {
-        await supabase
+        const { error } = await supabase
           .from('live_transcripts')
           .insert({
             session_id: dbSessionId,
             role,
             content,
           });
+        
+        if (error) {
+          console.error('Failed to save transcript:', error);
+        } else {
+          console.log('Transcript saved:', role, content.substring(0, 30));
+        }
       } catch (error) {
         console.error('Failed to save transcript:', error);
       }
@@ -152,12 +210,19 @@ export const useLiveSession = () => {
   }, [dbSessionId]);
 
   const processVoiceInput = useCallback(async (transcript: string) => {
-    if (!transcript.trim() || isProcessing) return null;
+    if (!transcript.trim() || isProcessing) {
+      console.log('Skipping voice input:', !transcript.trim() ? 'empty' : 'already processing');
+      return null;
+    }
 
     setIsProcessing(true);
+    setTriageError(null);
+    
     await addMessage('user', transcript);
 
     try {
+      console.log('Sending voice input for triage analysis...');
+      
       const { data, error } = await supabase.functions.invoke('ai-live-triage', {
         body: {
           transcript,
@@ -167,10 +232,19 @@ export const useLiveSession = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Triage function error:', error);
+        throw error;
+      }
 
       const result = data as LiveTriageResult;
       
+      console.log('Triage response received:', {
+        hasResponse: !!result.response,
+        triageLevel: result.triageLevel,
+        shouldEscalate: result.shouldEscalate
+      });
+
       if (result.response) {
         await addMessage('assistant', result.response);
       }
@@ -184,10 +258,24 @@ export const useLiveSession = () => {
       }
 
       setCurrentTriage(result);
+      
+      // Show toast for escalation
+      if (result.shouldEscalate) {
+        toast({
+          title: 'Urgent Concern Detected',
+          description: 'Based on your symptoms, immediate medical attention may be needed.',
+          variant: 'destructive',
+        });
+      }
+
       return result;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Voice processing error:', error);
+      
+      const errorMsg = error?.message || 'Unable to process your input';
+      setTriageError(errorMsg);
+      
       toast({
         title: 'Processing Error',
         description: 'Unable to process your input. Please try again.',
@@ -201,18 +289,34 @@ export const useLiveSession = () => {
 
   const analyzeFrame = useCallback(async (imageBase64: string) => {
     if (!imageBase64 || imageBase64.length < 1000) {
-      console.log('Invalid frame, skipping analysis');
+      console.log('Invalid frame, skipping analysis. Length:', imageBase64?.length || 0);
       return null;
     }
 
+    setVisionError(null);
+
     try {
+      console.log('Sending frame for vision analysis...');
+      
       const { data, error } = await supabase.functions.invoke('ai-live-vision', {
-        body: { imageBase64 },
+        body: { 
+          imageBase64,
+          sessionId: dbSessionId 
+        },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Vision function error:', error);
+        throw error;
+      }
 
       const result = data as LiveVisionResult;
+      
+      console.log('Vision result received:', {
+        detections: result.detections?.length || 0,
+        concernLevel: result.concernLevel
+      });
+
       setLatestVision(result);
 
       setSession(prev => prev ? {
@@ -220,39 +324,42 @@ export const useLiveSession = () => {
         visionResults: [...prev.visionResults, result],
       } : null);
 
-      // Save detections to database
-      if (dbSessionId && result.detections?.length > 0) {
-        const detectionsToInsert = result.detections.map(d => ({
-          session_id: dbSessionId,
-          detection_type: d.type,
-          severity: d.severity,
-          location: d.location,
-          confidence: d.confidence,
-        }));
-
-        await supabase
-          .from('live_vision_detections')
-          .insert(detectionsToInsert);
-      }
-
+      // Detections are now saved in the edge function
       return result;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Vision analysis error:', error);
+      setVisionError(error?.message || 'Vision analysis failed');
       return null;
     }
+  }, [dbSessionId]);
+
+  const retryConnection = useCallback(async () => {
+    if (!dbSessionId) return;
+    
+    console.log('Retrying connection...');
+    setIsConnected(false);
+    
+    // Force resubscribe by updating dbSessionId
+    const currentId = dbSessionId;
+    setDbSessionId(null);
+    setTimeout(() => setDbSessionId(currentId), 100);
   }, [dbSessionId]);
 
   return {
     session,
     dbSessionId,
     isProcessing,
+    isConnected,
     currentTriage,
     latestVision,
+    visionError,
+    triageError,
     startSession,
     endSession,
     addMessage,
     processVoiceInput,
     analyzeFrame,
+    retryConnection,
   };
 };

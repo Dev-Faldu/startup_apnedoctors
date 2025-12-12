@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -55,12 +56,16 @@ serve(async (req) => {
   }
 
   try {
-    const { transcript, conversationHistory, imageAnalysis } = await req.json();
+    const { transcript, conversationHistory, imageAnalysis, sessionId } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
+
+    console.log('Processing voice input:', transcript?.substring(0, 50), 'Session:', sessionId);
 
     const messages = [
       { role: 'system', content: LIVE_TRIAGE_PROMPT },
@@ -72,8 +77,10 @@ serve(async (req) => {
 
     // Include image analysis context if available
     let userContent = `Patient says: "${transcript}"`;
-    if (imageAnalysis) {
-      userContent += `\n\nVisual analysis: ${JSON.stringify(imageAnalysis)}`;
+    if (imageAnalysis && imageAnalysis.detections?.length > 0) {
+      userContent += `\n\nVisual analysis detected: ${JSON.stringify(imageAnalysis.detections)}`;
+      userContent += `\nOverall visual assessment: ${imageAnalysis.overallAssessment}`;
+      userContent += `\nConcern level from vision: ${imageAnalysis.concernLevel}`;
     }
     messages.push({ role: 'user', content: userContent });
 
@@ -92,11 +99,27 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again.' }), {
+        console.error('Rate limit exceeded');
+        return new Response(JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again.',
+          response: "I'm processing many requests right now. Please wait a moment and try again."
+        }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      if (response.status === 402) {
+        console.error('Payment required');
+        return new Response(JSON.stringify({ 
+          error: 'AI credits exhausted.',
+          response: "The AI service is temporarily unavailable. Please try again later."
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const errorText = await response.text();
+      console.error('AI gateway error:', response.status, errorText);
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
@@ -107,12 +130,36 @@ serve(async (req) => {
     try {
       result = JSON.parse(content);
     } catch {
+      console.error('Failed to parse AI response:', content);
       result = {
         response: "I'm having trouble processing that. Could you please repeat?",
         triageLevel: null,
         extractedInfo: {},
         conversationComplete: false,
       };
+    }
+
+    console.log('Triage result:', {
+      triageLevel: result.triageLevel,
+      shouldEscalate: result.shouldEscalate,
+      extractedSymptoms: result.extractedInfo?.symptoms?.length || 0
+    });
+
+    // Update session in database if we have session ID and triage level
+    if (sessionId && result.triageLevel && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        await supabase
+          .from('live_sessions')
+          .update({ 
+            triage_level: result.triageLevel,
+            summary: result.extractedInfo ? JSON.stringify(result.extractedInfo) : null
+          })
+          .eq('id', sessionId);
+        console.log('Updated session triage level:', result.triageLevel);
+      } catch (dbError) {
+        console.error('Failed to update session:', dbError);
+      }
     }
 
     return new Response(JSON.stringify(result), {
