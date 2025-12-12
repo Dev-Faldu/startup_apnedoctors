@@ -67,10 +67,16 @@ export const useLiveCamera = () => {
         
         video.onloadedmetadata = () => {
           console.log('Video metadata loaded:', video.videoWidth, 'x', video.videoHeight);
+          // If dimensions are available, we can already consider video usable
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            setIsVideoReady(true);
+          }
         };
         
         video.oncanplay = () => {
           console.log('Video can play, ready state:', video.readyState);
+          // Extra safety: mark ready when browser says it can play
+          setIsVideoReady(true);
         };
 
         video.onplaying = () => {
@@ -81,16 +87,20 @@ export const useLiveCamera = () => {
         video.onerror = (e) => {
           console.error('Video error:', e);
           setError('Video playback error');
+          setIsVideoReady(false);
         };
 
         // Try to play
         try {
           await video.play();
           console.log('Video play initiated');
+          // If play() resolved, we know playback started or will start imminently
+          setIsVideoReady(true);
         } catch (playError) {
           console.error('Video play error:', playError);
           // Still mark as active, user might need to interact
           setError('Tap to start video');
+          setIsVideoReady(false);
         }
       }
       
