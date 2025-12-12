@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +13,8 @@ Analyze the image for:
 2. Skin condition changes
 3. Posture or alignment issues
 4. Any concerning visual indicators
+
+Be thorough but concise. Only report what you can actually see in the image.
 
 Respond in JSON:
 {
@@ -27,7 +30,9 @@ Respond in JSON:
   "concernLevel": "low" | "medium" | "high",
   "recommendations": ["Array of visual-based recommendations"],
   "disclaimer": "This is an AI visual assessment only, not a medical diagnosis."
-}`;
+}
+
+If you cannot see any injury or the image quality is poor, return empty detections with appropriate overallAssessment.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,8 +40,10 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64 } = await req.json();
+    const { imageBase64, sessionId } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
@@ -45,12 +52,13 @@ serve(async (req) => {
     // Validate image data - check for empty or invalid data URLs
     const isValidImage = imageBase64 && 
       typeof imageBase64 === 'string' && 
-      imageBase64.length > 100 && // A valid base64 image should be much longer
+      imageBase64.length > 1000 && 
       !imageBase64.endsWith('data:,') &&
-      imageBase64 !== 'data:,';
+      imageBase64 !== 'data:,' &&
+      imageBase64.includes('base64');
 
     if (!isValidImage) {
-      console.log('Invalid or empty image data received, skipping vision analysis');
+      console.log('Invalid or empty image data received, length:', imageBase64?.length || 0);
       return new Response(JSON.stringify({
         detections: [],
         overallAssessment: 'Waiting for valid image capture',
@@ -62,6 +70,8 @@ serve(async (req) => {
       });
     }
 
+    console.log('Analyzing image frame, size:', imageBase64.length);
+
     const messages: any[] = [
       { role: 'system', content: LIVE_VISION_PROMPT },
       {
@@ -69,7 +79,7 @@ serve(async (req) => {
         content: [
           {
             type: 'text',
-            text: 'Analyze this image for any visible signs of injury or medical concern.',
+            text: 'Analyze this image for any visible signs of injury or medical concern. Be specific about what you observe.',
           },
           {
             type: 'image_url',
@@ -96,11 +106,35 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+        console.error('Vision rate limit exceeded');
+        return new Response(JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          detections: [],
+          overallAssessment: 'Analysis paused due to rate limiting',
+          concernLevel: 'low',
+          recommendations: [],
+          disclaimer: 'Please wait a moment before the next analysis.'
+        }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      if (response.status === 402) {
+        console.error('Vision payment required');
+        return new Response(JSON.stringify({ 
+          error: 'AI credits exhausted',
+          detections: [],
+          overallAssessment: 'Vision analysis temporarily unavailable',
+          concernLevel: 'low',
+          recommendations: [],
+          disclaimer: 'The AI service is temporarily unavailable.'
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const errorText = await response.text();
+      console.error('AI gateway error:', response.status, errorText);
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
@@ -111,6 +145,7 @@ serve(async (req) => {
     try {
       result = JSON.parse(content);
     } catch {
+      console.error('Failed to parse vision response:', content);
       result = {
         detections: [],
         overallAssessment: 'Unable to analyze image',
@@ -118,6 +153,32 @@ serve(async (req) => {
         recommendations: [],
         disclaimer: 'AI analysis encountered an error.',
       };
+    }
+
+    console.log('Vision result:', {
+      detectionCount: result.detections?.length || 0,
+      concernLevel: result.concernLevel
+    });
+
+    // Save detections to database if we have session ID
+    if (sessionId && result.detections?.length > 0 && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const detectionsToInsert = result.detections.map((d: any) => ({
+          session_id: sessionId,
+          detection_type: d.type,
+          severity: d.severity,
+          location: d.location,
+          confidence: d.confidence,
+        }));
+
+        await supabase
+          .from('live_vision_detections')
+          .insert(detectionsToInsert);
+        console.log('Saved', detectionsToInsert.length, 'vision detections');
+      } catch (dbError) {
+        console.error('Failed to save vision detections:', dbError);
+      }
     }
 
     return new Response(JSON.stringify(result), {
@@ -128,6 +189,11 @@ serve(async (req) => {
     console.error('Live vision error:', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'Unknown error',
+      detections: [],
+      overallAssessment: 'Vision analysis error',
+      concernLevel: 'low',
+      recommendations: [],
+      disclaimer: 'Please try again.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
