@@ -220,40 +220,46 @@ const Live = () => {
 
           {/* Main Video Area */}
           <Card className="relative aspect-video bg-card/50 border-primary/20 overflow-hidden">
-            {isCameraActive ? (
-              <>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
-                {!isVideoReady && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 text-muted-foreground">
+            {/* Always render video so the ref is available when camera starts */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+
+            {/* Overlays based on camera state */}
+            {(!isCameraActive || !isVideoReady) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 text-muted-foreground">
+                {isCameraActive ? (
+                  <>
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                     <p>Initializing camera...</p>
-                  </div>
-                )}
-                <VisionOverlay
-                  detections={latestVision?.detections || []}
-                  concernLevel={latestVision?.concernLevel || 'low'}
-                  isAnalyzing={isAnalyzingFrame}
-                />
-              </>
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
-                <Video className="w-16 h-16 mb-4 opacity-50" />
-                <p>Camera will activate when session starts</p>
-                {permissionDenied && (
-                  <p className="text-destructive text-sm mt-2 max-w-md text-center px-4">
-                    Camera access denied. Please enable camera permission in your browser settings and refresh the page.
-                  </p>
+                  </>
+                ) : (
+                  <>
+                    <Video className="w-16 h-16 mb-4 opacity-50" />
+                    <p>Camera will activate when session starts</p>
+                    {permissionDenied && (
+                      <p className="text-destructive text-sm mt-2 max-w-md text-center px-4">
+                        Camera access denied. Please enable camera permission in your browser settings and refresh the page.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}
 
-            {/* Voice Activity Overlay */}
+            {/* Vision overlay when we have video */}
+            {isCameraActive && isVideoReady && (
+              <VisionOverlay
+                detections={latestVision?.detections || []}
+                concernLevel={latestVision?.concernLevel || 'low'}
+                isAnalyzing={isAnalyzingFrame}
+              />
+            )}
+
             {isSessionActive && isVideoReady && (
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="bg-background/80 backdrop-blur-sm rounded-xl p-3 flex items-center gap-4">
