@@ -63,18 +63,6 @@ const Live = () => {
 
   const { speak, stop: stopSpeaking, isSpeaking } = useTextToSpeech();
 
-  const handleSilence = useCallback(async () => {
-    if (transcript && !isProcessing && isSessionActive) {
-      console.log('Silence detected, processing transcript...');
-      const result = await processVoiceInput(transcript);
-      resetTranscript();
-      
-      if (result?.response) {
-        speak(result.response);
-      }
-    }
-  }, [processVoiceInput, speak, isSessionActive]);
-
   const {
     isListening,
     transcript,
@@ -83,14 +71,35 @@ const Live = () => {
     stopListening,
     resetTranscript,
   } = useVoiceRecognition({
-    onSilence: handleSilence,
     silenceTimeout: 2000,
   });
+
+  // Handle silence - process voice input when user stops speaking
+  useEffect(() => {
+    if (!transcript || isProcessing || !isSessionActive) return;
+    
+    const timer = setTimeout(async () => {
+      if (transcript) {
+        console.log('Silence detected, processing transcript...');
+        const result = await processVoiceInput(transcript);
+        resetTranscript();
+        
+        if (result?.response) {
+          speak(result.response);
+        }
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [transcript, isProcessing, isSessionActive, processVoiceInput, resetTranscript, speak]);
 
   const handleStartSession = async () => {
     setIsStarting(true);
     try {
       await startCamera();
+      // Give browser time to initialize video element
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const sessionId = await startSession();
       if (!sessionId) {
         stopCamera();

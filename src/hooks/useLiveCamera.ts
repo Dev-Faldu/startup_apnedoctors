@@ -62,46 +62,69 @@ export const useLiveCamera = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         
-        // Set up event handlers before playing
         const video = videoRef.current;
         
-        video.onloadedmetadata = () => {
-          console.log('Video metadata loaded:', video.videoWidth, 'x', video.videoHeight);
-          // If dimensions are available, we can already consider video usable
-          if (video.videoWidth > 0 && video.videoHeight > 0) {
-            setIsVideoReady(true);
-          }
-        };
-        
-        video.oncanplay = () => {
-          console.log('Video can play, ready state:', video.readyState);
-          // Extra safety: mark ready when browser says it can play
-          setIsVideoReady(true);
-        };
+        // Promise-based approach with timeout fallback
+        const waitForVideoReady = new Promise<void>((resolve) => {
+          let resolved = false;
+          
+          const markReady = () => {
+            if (!resolved) {
+              resolved = true;
+              console.log('Video marked as ready');
+              setIsVideoReady(true);
+              resolve();
+            }
+          };
 
-        video.onplaying = () => {
-          console.log('Video is now playing');
-          setIsVideoReady(true);
-        };
+          video.onloadedmetadata = () => {
+            console.log('Video metadata loaded:', video.videoWidth, 'x', video.videoHeight);
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
+              markReady();
+            }
+          };
+          
+          video.oncanplay = () => {
+            console.log('Video can play');
+            markReady();
+          };
 
-        video.onerror = (e) => {
-          console.error('Video error:', e);
-          setError('Video playback error');
-          setIsVideoReady(false);
-        };
+          video.onplaying = () => {
+            console.log('Video is now playing');
+            markReady();
+          };
+
+          video.onerror = (e) => {
+            console.error('Video error:', e);
+            setError('Video playback error');
+          };
+
+          // Fallback: poll for readiness every 100ms for up to 3s
+          let pollCount = 0;
+          const pollInterval = setInterval(() => {
+            pollCount++;
+            if (video.readyState >= 2 && video.videoWidth > 0) {
+              console.log('Video ready via polling, readyState:', video.readyState);
+              clearInterval(pollInterval);
+              markReady();
+            } else if (pollCount > 30) {
+              clearInterval(pollInterval);
+              console.log('Video polling timeout, forcing ready');
+              markReady(); // Force ready after 3s
+            }
+          }, 100);
+        });
 
         // Try to play
         try {
           await video.play();
-          console.log('Video play initiated');
-          // If play() resolved, we know playback started or will start imminently
-          setIsVideoReady(true);
+          console.log('Video play() resolved');
         } catch (playError) {
-          console.error('Video play error:', playError);
-          // Still mark as active, user might need to interact
-          setError('Tap to start video');
-          setIsVideoReady(false);
+          console.warn('Video autoplay failed, user interaction may be needed:', playError);
         }
+
+        // Wait for video to be ready (with timeout)
+        await waitForVideoReady;
       }
       
       setIsActive(true);
