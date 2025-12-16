@@ -22,3 +22,21 @@ verify_jwt = false
 
 [functions.platform-stats]
 verify_jwt = false
+
+[functions.ai-object-detection]
+verify_jwt = false
+
+[functions.ai-pose-analysis]
+verify_jwt = false
+
+[functions.ai-symptom-analysis]
+verify_jwt = false
+
+[functions.ai-comprehensive-report]
+verify_jwt = false
+
+[functions.ai-realtime-triage]
+verify_jwt = false
+
+[functions.ai-emergency-check]
+verify_jwt = false
