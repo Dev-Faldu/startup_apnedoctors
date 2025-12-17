@@ -1,0 +1,204 @@
+version: '3.8'
+
+services:
+  # ===========================================
+  # CORE INFRASTRUCTURE
+  # ===========================================
+  
+  postgres:
+    image: postgres:15-alpine
+    container_name: apnedoctors-postgres
+    environment:
+      POSTGRES_USER: apnedoctors
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: voice_ai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apnedoctors"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: apnedoctors-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: apnedoctors-qdrant
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+
+  # ===========================================
+  # AI INFERENCE SERVICES (GPU)
+  # ===========================================
+
+  whisper-stt:
+    build:
+      context: ./services/whisper-stt
+      dockerfile: Dockerfile
+    container_name: apnedoctors-stt
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - MODEL_SIZE=large-v3
+      - DEVICE=cuda
+      - COMPUTE_TYPE=float16
+    ports:
+      - "8001:8000"
+    volumes:
+      - whisper_cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  vllm-llm:
+    image: vllm/vllm-openai:latest
+    container_name: apnedoctors-llm
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+    command: >
+      --model meta-llama/Meta-Llama-3-8B-Instruct
+      --dtype float16
+      --max-model-len 8192
+      --gpu-memory-utilization 0.8
+      --port 8000
+    ports:
+      - "8002:8000"
+    volumes:
+      - llm_cache:/root/.cache/huggingface
+    shm_size: '8gb'
+
+  coqui-tts:
+    build:
+      context: ./services/coqui-tts
+      dockerfile: Dockerfile
+    container_name: apnedoctors-tts
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - MODEL_NAME=tts_models/multilingual/multi-dataset/xtts_v2
+      - DEVICE=cuda
+    ports:
+      - "8003:8000"
+    volumes:
+      - tts_cache:/root/.local/share/tts
+
+  # ===========================================
+  # APPLICATION SERVICES
+  # ===========================================
+
+  voice-orchestrator:
+    build:
+      context: ./services/orchestrator
+      dockerfile: Dockerfile
+    container_name: apnedoctors-orchestrator
+    environment:
+      - STT_URL=http://whisper-stt:8000
+      - LLM_URL=http://vllm-llm:8000
+      - TTS_URL=http://coqui-tts:8000
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://apnedoctors:${POSTGRES_PASSWORD:-changeme}@postgres:5432/voice_ai
+      - QDRANT_URL=http://qdrant:6333
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
+      - whisper-stt
+      - vllm-llm
+      - coqui-tts
+
+  webrtc-server:
+    build:
+      context: ./services/webrtc
+      dockerfile: Dockerfile
+    container_name: apnedoctors-webrtc
+    environment:
+      - ORCHESTRATOR_URL=http://voice-orchestrator:8000
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "8080:8080"
+      - "3478:3478/udp"  # STUN
+      - "5349:5349/tcp"  # TURN over TCP
+    depends_on:
+      - voice-orchestrator
+      - redis
+
+  # ===========================================
+  # MONITORING (Optional)
+  # ===========================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: apnedoctors-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: apnedoctors-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  whisper_cache:
+  llm_cache:
+  tts_cache:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: apnedoctors-network
