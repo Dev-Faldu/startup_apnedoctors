@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Activity, Stethoscope, Video, Settings } from "lucide-react";
+import { UserMenu } from "@/components/auth/UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isDoctor, isAdmin } = useAuth();
 
   const navLinks = [
     { name: "Features", href: "#features" },
@@ -18,7 +21,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
               <Activity className="w-8 h-8 text-primary animate-pulse-glow" />
               <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
@@ -26,7 +29,7 @@ const Navbar = () => {
             <span className="text-xl font-bold text-foreground">
               Apne<span className="text-primary text-glow-sm">Doctors</span>
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
@@ -42,28 +45,35 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <Link to="/live">
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
-                <Video className="h-4 w-4" />
-                Live AI
-              </Button>
-            </Link>
-            <Link to="/doctor">
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
-                <Stethoscope className="h-4 w-4" />
-                Doctor Portal
-              </Button>
-            </Link>
-            <Link to="/settings">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/assessment">
-              <Button variant="hero" size="sm">
-                Start Assessment
-              </Button>
-            </Link>
+            {user && (
+              <>
+                <Link to="/live">
+                  <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                    <Video className="h-4 w-4" />
+                    Live AI
+                  </Button>
+                </Link>
+                {(isDoctor || isAdmin) && (
+                  <Link to="/doctor">
+                    <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                      <Stethoscope className="h-4 w-4" />
+                      Doctor Portal
+                    </Button>
+                  </Link>
+                )}
+                <Link to="/settings">
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/assessment">
+                  <Button variant="hero" size="sm">
+                    Start Assessment
+                  </Button>
+                </Link>
+              </>
+            )}
+            <UserMenu />
           </div>
 
           {/* Mobile Menu Button */}
@@ -90,29 +100,48 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4">
-                <Link to="/live" onClick={() => setIsOpen(false)}>
-                  <Button variant="ghost" size="sm" className="w-full gap-2">
-                    <Video className="h-4 w-4" />
-                    Live AI
-                  </Button>
-                </Link>
-                <Link to="/doctor" onClick={() => setIsOpen(false)}>
-                  <Button variant="ghost" size="sm" className="w-full gap-2">
-                    <Stethoscope className="h-4 w-4" />
-                    Doctor Portal
-                  </Button>
-                </Link>
-                <Link to="/settings" onClick={() => setIsOpen(false)}>
-                  <Button variant="ghost" size="sm" className="w-full gap-2">
-                    <Settings className="h-4 w-4" />
-                    Settings
-                  </Button>
-                </Link>
-                <Link to="/assessment" onClick={() => setIsOpen(false)}>
-                  <Button variant="hero" size="sm" className="w-full">
-                    Start Assessment
-                  </Button>
-                </Link>
+                {user ? (
+                  <>
+                    <Link to="/live" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full gap-2">
+                        <Video className="h-4 w-4" />
+                        Live AI
+                      </Button>
+                    </Link>
+                    {(isDoctor || isAdmin) && (
+                      <Link to="/doctor" onClick={() => setIsOpen(false)}>
+                        <Button variant="ghost" size="sm" className="w-full gap-2">
+                          <Stethoscope className="h-4 w-4" />
+                          Doctor Portal
+                        </Button>
+                      </Link>
+                    )}
+                    <Link to="/settings" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full gap-2">
+                        <Settings className="h-4 w-4" />
+                        Settings
+                      </Button>
+                    </Link>
+                    <Link to="/assessment" onClick={() => setIsOpen(false)}>
+                      <Button variant="hero" size="sm" className="w-full">
+                        Start Assessment
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/signup" onClick={() => setIsOpen(false)}>
+                      <Button variant="hero" size="sm" className="w-full">
+                        Get Started
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

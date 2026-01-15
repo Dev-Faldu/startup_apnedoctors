@@ -76,10 +76,23 @@ export const useLiveSession = () => {
     try {
       console.log('Starting new live session...');
       
-      // Create session in database
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('No authenticated user found');
+        toast({
+          title: 'Authentication Required',
+          description: 'Please sign in to start a session.',
+          variant: 'destructive',
+        });
+        return null;
+      }
+      
+      // Create session in database with patient_id = auth.uid()
       const { data: dbSession, error } = await supabase
         .from('live_sessions')
         .insert({
+          patient_id: user.id,
           status: 'active',
           triage_level: 'GREEN',
         })
@@ -222,6 +235,9 @@ export const useLiveSession = () => {
 
     try {
       console.log('Sending voice input for triage analysis...');
+      
+      // Get auth session for the request
+      const { data: { session: authSession } } = await supabase.auth.getSession();
       
       const { data, error } = await supabase.functions.invoke('ai-live-triage', {
         body: {
