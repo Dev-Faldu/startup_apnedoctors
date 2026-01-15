@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
 import Doctor from "./pages/Doctor";
+import Admin from "./pages/Admin";
 import Live from "./pages/Live";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
@@ -40,6 +41,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireDoctor>
                   <Doctor />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute requireAdmin>
+                  <Admin />
                 </ProtectedRoute>
               } 
             />
