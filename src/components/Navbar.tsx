@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Activity, Stethoscope, Video } from "lucide-react";
+import { Menu, X, Activity, Stethoscope, Video, Settings } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,6 +54,11 @@ const Navbar = () => {
                 Doctor Portal
               </Button>
             </Link>
+            <Link to="/settings">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link to="/assessment">
               <Button variant="hero" size="sm">
                 Start Assessment
@@ -85,10 +90,22 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4">
+                <Link to="/live" onClick={() => setIsOpen(false)}>
+                  <Button variant="ghost" size="sm" className="w-full gap-2">
+                    <Video className="h-4 w-4" />
+                    Live AI
+                  </Button>
+                </Link>
                 <Link to="/doctor" onClick={() => setIsOpen(false)}>
                   <Button variant="ghost" size="sm" className="w-full gap-2">
                     <Stethoscope className="h-4 w-4" />
                     Doctor Portal
+                  </Button>
+                </Link>
+                <Link to="/settings" onClick={() => setIsOpen(false)}>
+                  <Button variant="ghost" size="sm" className="w-full gap-2">
+                    <Settings className="h-4 w-4" />
+                    Settings
                   </Button>
                 </Link>
                 <Link to="/assessment" onClick={() => setIsOpen(false)}>
