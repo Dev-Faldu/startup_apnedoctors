@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Activity, Stethoscope, Video, Settings } from "lucide-react";
+import { Menu, X, Activity, Stethoscope, Video, Settings, ShieldCheck } from "lucide-react";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -61,6 +61,14 @@ const Navbar = () => {
                     </Button>
                   </Link>
                 )}
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                      <ShieldCheck className="h-4 w-4" />
+                      Admin
+                    </Button>
+                  </Link>
+                )}
                 <Link to="/settings">
                   <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
                     <Settings className="h-4 w-4" />
@@ -113,6 +121,14 @@ const Navbar = () => {
                         <Button variant="ghost" size="sm" className="w-full gap-2">
                           <Stethoscope className="h-4 w-4" />
                           Doctor Portal
+                        </Button>
+                      </Link>
+                    )}
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setIsOpen(false)}>
+                        <Button variant="ghost" size="sm" className="w-full gap-2">
+                          <ShieldCheck className="h-4 w-4" />
+                          Admin
                         </Button>
                       </Link>
                     )}
