@@ -8,8 +8,16 @@ export async function saveAssessment(
   visionResult: VisionAnalysisResult | null
 ): Promise<string | null> {
   try {
-    // Create assessment record
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
+
+    // Create assessment record with patient_id = auth.uid()
     const insertData = {
+      patient_id: user.id,
       body_part: patientInfo.location,
       symptoms: patientInfo.symptoms,
       pain_level: patientInfo.painLevel,
