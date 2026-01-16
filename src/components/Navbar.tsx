@@ -45,6 +45,11 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
+            <a href="https://apnedoctors-app.vercel.app/" target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                Symptom Quiz
+              </Button>
+            </a>
             {user && (
               <>
                 <Link to="/live">
@@ -110,6 +115,11 @@ const Navbar = () => {
               <div className="flex flex-col gap-2 pt-4">
                 {user ? (
                   <>
+                    <a href="https://apnedoctors-app.vercel.app/" target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full gap-2">
+                        Symptom Quiz
+                      </Button>
+                    </a>
                     <Link to="/live" onClick={() => setIsOpen(false)}>
                       <Button variant="ghost" size="sm" className="w-full gap-2">
                         <Video className="h-4 w-4" />
@@ -146,6 +156,11 @@ const Navbar = () => {
                   </>
                 ) : (
                   <>
+                    <a href="https://apnedoctors-app.vercel.app/" target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full">
+                        Symptom Quiz
+                      </Button>
+                    </a>
                     <Link to="/login" onClick={() => setIsOpen(false)}>
                       <Button variant="ghost" size="sm" className="w-full">
                         Sign In
