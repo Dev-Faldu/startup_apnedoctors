@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { triageInputSchema, validateInput, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,9 +40,18 @@ serve(async (req) => {
   }
 
   try {
-    const { symptoms, painLevel, duration, location, additionalInfo } = await req.json();
+    const rawBody = await req.json();
     
-    console.log("Received triage request:", { symptoms, painLevel, duration, location });
+    // Validate and sanitize input
+    const validation = validateInput(triageInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      return validationErrorResponse(validation.error, corsHeaders);
+    }
+    
+    const { symptoms, painLevel, duration, location, additionalInfo } = validation.data;
+    
+    console.log("Received triage request:", { symptoms: symptoms?.substring(0, 50), painLevel, duration, location });
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -52,7 +62,7 @@ serve(async (req) => {
 Patient Symptoms Analysis Request:
 
 AFFECTED AREA: ${location || "Not specified"}
-PAIN LEVEL: ${painLevel || "Not specified"}/10
+PAIN LEVEL: ${painLevel !== undefined && painLevel !== null ? `${painLevel}/10` : "Not specified"}
 DURATION: ${duration || "Not specified"}
 SYMPTOMS DESCRIBED: ${symptoms || "Not provided"}
 ADDITIONAL INFORMATION: ${additionalInfo || "None"}

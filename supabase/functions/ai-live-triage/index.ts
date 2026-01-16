@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { liveTriageInputSchema, validateInput, validationErrorResponse, sanitizeText } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,7 +57,17 @@ serve(async (req) => {
   }
 
   try {
-    const { transcript, conversationHistory, imageAnalysis, sessionId } = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate and sanitize input
+    const validation = validateInput(liveTriageInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      return validationErrorResponse(validation.error, corsHeaders);
+    }
+    
+    const { transcript, conversationHistory, imageAnalysis, sessionId } = validation.data;
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -76,11 +87,14 @@ serve(async (req) => {
     ];
 
     // Include image analysis context if available
-    let userContent = `Patient says: "${transcript}"`;
-    if (imageAnalysis && imageAnalysis.detections?.length > 0) {
-      userContent += `\n\nVisual analysis detected: ${JSON.stringify(imageAnalysis.detections)}`;
-      userContent += `\nOverall visual assessment: ${imageAnalysis.overallAssessment}`;
-      userContent += `\nConcern level from vision: ${imageAnalysis.concernLevel}`;
+    let userContent = `Patient says: "${transcript || ''}"`;
+    if (imageAnalysis && typeof imageAnalysis === 'object' && 'detections' in imageAnalysis) {
+      const analysis = imageAnalysis as { detections?: unknown[]; overallAssessment?: string; concernLevel?: string };
+      if (analysis.detections && Array.isArray(analysis.detections) && analysis.detections.length > 0) {
+        userContent += `\n\nVisual analysis detected: ${JSON.stringify(analysis.detections)}`;
+        userContent += `\nOverall visual assessment: ${sanitizeText(analysis.overallAssessment, 500)}`;
+        userContent += `\nConcern level from vision: ${sanitizeText(analysis.concernLevel, 50)}`;
+      }
     }
     messages.push({ role: 'user', content: userContent });
 
