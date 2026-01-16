@@ -43,15 +43,15 @@ const Footer = () => {
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-primary" />
-                hello@apnedoctors.ai
+                er.devfaldu@gmail.com
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary" />
-                +91 98765 43210
+                +91 63536 85893
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                Arpan Hospital, Rajkot, Gujarat, India
+                Rajkot, Gujarat, India
               </li>
             </ul>
           </div>
@@ -60,7 +60,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-border/30 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2024 ApneDoctors. All rights reserved.
+            © 2026 ApneDoctors. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
