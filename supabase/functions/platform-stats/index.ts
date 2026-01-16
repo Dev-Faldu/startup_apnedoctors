@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { platformStatsInputSchema, validateInput } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +13,20 @@ serve(async (req) => {
   }
 
   try {
+    // Validate input (platform-stats accepts no meaningful input, but validate anyway)
+    let rawBody = {};
+    try {
+      rawBody = await req.json();
+    } catch {
+      // No body is fine for this endpoint
+    }
+    
+    const validation = validateInput(platformStatsInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      // For stats endpoint, just continue with defaults
+    }
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);

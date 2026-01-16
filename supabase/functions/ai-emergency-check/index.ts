@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { emergencyCheckInputSchema, validateInput, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,8 +34,28 @@ serve(async (req) => {
   }
 
   try {
-    const { text, symptoms } = await req.json();
-    const inputText = `${text || ""} ${Array.isArray(symptoms) ? symptoms.join(" ") : symptoms || ""}`.toLowerCase();
+    const rawBody = await req.json();
+    
+    // Validate and sanitize input
+    const validation = validateInput(emergencyCheckInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      return validationErrorResponse(validation.error, corsHeaders);
+    }
+    
+    const { text, symptoms } = validation.data;
+    
+    // Build input text for analysis
+    let inputText = '';
+    if (text) inputText += text + ' ';
+    if (symptoms) {
+      if (Array.isArray(symptoms)) {
+        inputText += symptoms.join(' ');
+      } else {
+        inputText += symptoms;
+      }
+    }
+    inputText = inputText.toLowerCase();
 
     console.log("Emergency check for:", inputText.substring(0, 100));
 

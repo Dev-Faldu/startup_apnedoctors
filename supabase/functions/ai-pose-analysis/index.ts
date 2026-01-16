@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { objectDetectionInputSchema, validateInput, validationErrorResponse, sanitizeImageBase64 } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,25 @@ serve(async (req) => {
   }
 
   try {
-    const { image, sessionId, analysisType } = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate and sanitize input
+    const validation = validateInput(objectDetectionInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      return validationErrorResponse(validation.error, corsHeaders);
+    }
+    
+    const { sessionId, analysisType } = validation.data;
+    
+    // Separately validate image
+    let image: string | null = null;
+    try {
+      image = sanitizeImageBase64(rawBody.image);
+    } catch (imgError) {
+      console.error('Image validation failed:', imgError);
+      return validationErrorResponse(imgError instanceof Error ? imgError.message : 'Invalid image', corsHeaders);
+    }
     
     if (!image) {
       return new Response(

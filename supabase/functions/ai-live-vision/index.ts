@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { liveVisionInputSchema, validateInput, validationErrorResponse, sanitizeImageBase64 } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,7 +41,26 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64, sessionId } = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate and sanitize input
+    const validation = validateInput(liveVisionInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      return validationErrorResponse(validation.error, corsHeaders);
+    }
+    
+    const { sessionId } = validation.data;
+    
+    // Separately validate image
+    let imageBase64: string | null = null;
+    try {
+      imageBase64 = sanitizeImageBase64(rawBody.imageBase64);
+    } catch (imgError) {
+      console.error('Image validation failed:', imgError);
+      return validationErrorResponse(imgError instanceof Error ? imgError.message : 'Invalid image', corsHeaders);
+    }
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -51,7 +71,6 @@ serve(async (req) => {
 
     // Validate image data - check for empty or invalid data URLs
     const isValidImage = imageBase64 && 
-      typeof imageBase64 === 'string' && 
       imageBase64.length > 1000 && 
       !imageBase64.endsWith('data:,') &&
       imageBase64 !== 'data:,' &&
@@ -70,7 +89,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('Analyzing image frame, size:', imageBase64.length);
+    console.log('Analyzing image frame, size:', imageBase64!.length);
 
     const messages: any[] = [
       { role: 'system', content: LIVE_VISION_PROMPT },
@@ -84,7 +103,7 @@ serve(async (req) => {
           {
             type: 'image_url',
             image_url: {
-              url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`,
+              url: imageBase64!.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`,
             },
           },
         ],

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { visionAnalysisInputSchema, validateInput, validationErrorResponse, sanitizeImageBase64 } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,7 +40,25 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64, bodyPart, additionalContext } = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate and sanitize input
+    const validation = validateInput(visionAnalysisInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      return validationErrorResponse(validation.error, corsHeaders);
+    }
+    
+    const { bodyPart, additionalContext } = validation.data;
+    
+    // Separately validate image
+    let imageBase64: string | null = null;
+    try {
+      imageBase64 = sanitizeImageBase64(rawBody.imageBase64);
+    } catch (imgError) {
+      console.error('Image validation failed:', imgError);
+      return validationErrorResponse(imgError instanceof Error ? imgError.message : 'Invalid image', corsHeaders);
+    }
     
     console.log("Received vision analysis request for:", bodyPart);
 
@@ -54,20 +73,19 @@ serve(async (req) => {
 
     // Validate image data - check for empty or invalid data URLs
     const isValidImage = imageBase64 && 
-      typeof imageBase64 === 'string' && 
       imageBase64.length > 100 &&
       !imageBase64.endsWith('data:,') &&
       imageBase64 !== 'data:,';
 
     if (isValidImage) {
-      console.log("Valid image provided, length:", imageBase64.length);
+      console.log("Valid image provided, length:", imageBase64!.length);
       messages.push({
         role: "user",
         content: [
           {
             type: "image_url",
             image_url: {
-              url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+              url: imageBase64!.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
             }
           },
           {

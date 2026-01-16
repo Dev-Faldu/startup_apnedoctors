@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { medicalReportInputSchema, validateInput, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -61,7 +62,16 @@ serve(async (req) => {
   }
 
   try {
-    const { triageData, visionData, patientInfo } = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate and sanitize input
+    const validation = validateInput(medicalReportInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      return validationErrorResponse(validation.error, corsHeaders);
+    }
+    
+    const { triageData, visionData, patientInfo } = validation.data;
     
     console.log("Generating medical report...");
 

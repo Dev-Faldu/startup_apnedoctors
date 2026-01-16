@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { comprehensiveReportInputSchema, validateInput, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,14 +13,16 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      patientInfo, 
-      symptomAnalysis, 
-      visionAnalysis, 
-      poseAnalysis,
-      sessionId,
-      assessmentId 
-    } = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate and sanitize input
+    const validation = validateInput(comprehensiveReportInputSchema, rawBody);
+    if (!validation.success) {
+      console.error('Validation failed:', validation.error);
+      return validationErrorResponse(validation.error, corsHeaders);
+    }
+    
+    const { patientInfo, symptomAnalysis, visionAnalysis, poseAnalysis, sessionId, assessmentId } = validation.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
