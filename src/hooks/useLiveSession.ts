@@ -88,11 +88,45 @@ export const useLiveSession = () => {
         return null;
       }
       
-      // Create session in database with patient_id = auth.uid()
+      // Ensure patient record exists for this user
+      let patientId: string;
+      
+      // First check if patient already exists with this user's email
+      const { data: existingPatient } = await supabase
+        .from('patients')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (existingPatient) {
+        patientId = existingPatient.id;
+        console.log('Using existing patient record:', patientId);
+      } else {
+        // Create a new patient record using the auth user's ID
+        const { data: newPatient, error: patientError } = await supabase
+          .from('patients')
+          .insert({
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Patient',
+          })
+          .select('id')
+          .single();
+        
+        if (patientError) {
+          console.error('Error creating patient record:', patientError);
+          throw new Error('Failed to create patient record');
+        }
+        
+        patientId = newPatient.id;
+        console.log('Created new patient record:', patientId);
+      }
+      
+      // Create session in database with the patient_id
       const { data: dbSession, error } = await supabase
         .from('live_sessions')
         .insert({
-          patient_id: user.id,
+          patient_id: patientId,
           status: 'active',
           triage_level: 'GREEN',
         })

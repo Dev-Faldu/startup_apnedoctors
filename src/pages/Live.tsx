@@ -10,6 +10,7 @@ import { VoiceWaveform } from '@/components/live/VoiceWaveform';
 import { LiveTranscript } from '@/components/live/LiveTranscript';
 import { VisionOverlay } from '@/components/live/VisionOverlay';
 import { TriageIndicator } from '@/components/live/TriageIndicator';
+import { LiveSessionReport } from '@/components/live/LiveSessionReport';
 import {
   Video,
   Mic,
@@ -22,6 +23,7 @@ import {
   Wifi,
   WifiOff,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 
@@ -30,6 +32,7 @@ const Live = () => {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [isAnalyzingFrame, setIsAnalyzingFrame] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const frameIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastAnalysisRef = useRef<number>(0);
 
@@ -425,32 +428,66 @@ const Live = () => {
           )}
 
           {/* Session Complete */}
-          {session?.endTime && (
-            <Card className="p-6 bg-card/50 border-primary/20 text-center space-y-4">
-              <h2 className="text-xl font-bold text-foreground">
-                Consultation Complete
-              </h2>
+          {session?.endTime && !showReport && (
+            <Card className="p-8 bg-gradient-to-br from-card via-background to-card border-primary/30 text-center space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/10 rounded-full blur-3xl" />
+                <div className="relative w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+                  <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+                </div>
+              </div>
+              
+              <div>
+                <h2 className="text-2xl font-bold text-foreground mb-2">
+                  Consultation Complete
+                </h2>
+                <p className="text-muted-foreground">
+                  Your AI medical consultation has ended. Generate a comprehensive report for your records.
+                </p>
+              </div>
+              
               <TriageIndicator
                 level={currentTriage?.triageLevel || null}
                 className="justify-center"
               />
+              
               <div className="flex justify-center gap-4">
-                <Button onClick={() => navigate('/assessment')} className="gap-2">
-                  <FileText className="w-4 h-4" />
+                <Button 
+                  size="lg"
+                  onClick={() => setShowReport(true)} 
+                  className="gap-2 bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                >
+                  <FileText className="w-5 h-5" />
                   Get Full Report
                 </Button>
-                <Button variant="outline" onClick={() => {
-                  setIsSessionActive(false);
-                  window.location.reload();
-                }}>
+                <Button 
+                  size="lg"
+                  variant="outline" 
+                  onClick={() => {
+                    setIsSessionActive(false);
+                    setShowReport(false);
+                    window.location.reload();
+                  }}
+                >
                   New Consultation
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                ⚠️ This AI consultation is not a substitute for professional medical
-                advice.
+              
+              <p className="text-xs text-muted-foreground px-4">
+                ⚠️ This AI consultation is not a substitute for professional medical advice. 
+                Always consult a qualified healthcare professional for diagnosis and treatment.
               </p>
             </Card>
+          )}
+
+          {/* Full Report View */}
+          {showReport && session && (
+            <LiveSessionReport
+              session={session}
+              triage={currentTriage}
+              visionResults={session.visionResults}
+              onClose={() => setShowReport(false)}
+            />
           )}
         </div>
       </main>

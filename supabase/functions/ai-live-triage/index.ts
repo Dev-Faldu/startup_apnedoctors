@@ -80,7 +80,7 @@ serve(async (req) => {
 
     const messages = [
       { role: 'system', content: LIVE_TRIAGE_PROMPT },
-      ...conversationHistory.map((msg: any) => ({
+      ...(conversationHistory || []).map((msg: any) => ({
         role: msg.role,
         content: msg.content,
       })),
