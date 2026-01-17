@@ -254,7 +254,8 @@ export class ExternalVoiceService {
       throw new Error('No active session - start session first');
     }
 
-    const wsUrl = this.baseUrl.replace('http', 'ws');
+    // Use a safer replacement to convert http/https -> ws/wss
+    const wsUrl = this.baseUrl.replace(/^http/, 'ws');
     this.websocket = new WebSocket(`${wsUrl}/ws/voice/${this.sessionId}`);
 
     this.websocket.onopen = () => {
@@ -393,10 +394,51 @@ export class AudioUtils {
     }
 
     const audioContext = new AudioContext();
-    const audioBuffer = await audioContext.decodeAudioData(audioArray.buffer);
-    const source = audioContext.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(audioContext.destination);
-    source.start(0);
+
+    // Try to decode common container formats (WAV/MP3/OGG). If that fails,
+    // fall back to treating the payload as raw 16-bit PCM and play it.
+    try {
+      // Quick header check for RIFF/WAV, Ogg, or FLAC
+      const header = String.fromCharCode(
+        audioArray[0] || 0,
+        audioArray[1] || 0,
+        audioArray[2] || 0,
+        audioArray[3] || 0
+      );
+
+      if (header === 'RIFF' || header === 'OggS' || header === 'fLaC') {
+        const audioBuffer = await audioContext.decodeAudioData(audioArray.buffer);
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+        return;
+      }
+    } catch (err) {
+      // continue to PCM fallback
+      console.warn('decodeAudioData failed, falling back to PCM playback', err);
+    }
+
+    // PCM fallback: interpret as signed 16-bit little-endian PCM at 16000Hz
+    try {
+      const view = new DataView(audioArray.buffer);
+      const samples = audioArray.length / 2;
+      const float32 = new Float32Array(samples);
+      for (let i = 0; i < samples; i++) {
+        const int16 = view.getInt16(i * 2, true);
+        float32[i] = int16 / 32768;
+      }
+
+      const buffer = audioContext.createBuffer(1, float32.length, 16000);
+      buffer.copyToChannel(float32, 0, 0);
+      const src = audioContext.createBufferSource();
+      src.buffer = buffer;
+      src.connect(audioContext.destination);
+      src.start(0);
+      return;
+    } catch (err) {
+      console.error('Failed to play audio (both decode and PCM fallback failed):', err);
+      throw err;
+    }
   }
 }

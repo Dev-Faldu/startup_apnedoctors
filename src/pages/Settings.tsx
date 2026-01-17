@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +29,11 @@ const Settings = () => {
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; latency?: number } | null>(null);
 
   // Sync local state when settings load
-  useState(() => {
+  useEffect(() => {
     if (!isLoading) {
       setBackendUrl(settings.backendUrl);
     }
-  });
+  }, [isLoading, settings.backendUrl]);
 
   const handleTestConnection = async () => {
     setIsTesting(true);
@@ -60,13 +60,24 @@ const Settings = () => {
     toast.success("Settings saved");
   };
 
-  const handleToggleEnabled = (enabled: boolean) => {
+  const handleToggleEnabled = async (enabled: boolean) => {
+    // If enabling and we don't have a known successful test, try testing now.
     if (enabled && !settings.lastTestSuccess) {
-      toast.error("Please test the connection first", {
-        description: "The backend must be reachable before enabling.",
-      });
-      return;
+      setIsTesting(true);
+      setTestResult(null);
+
+      const result = await testConnection(backendUrl);
+      setTestResult(result);
+      setIsTesting(false);
+
+      if (!result.success) {
+        toast.error("Please test the connection first", {
+          description: "The backend must be reachable before enabling.",
+        });
+        return;
+      }
     }
+
     saveSettings({ enabled });
     toast.success(enabled ? "Self-hosted backend enabled" : "Self-hosted backend disabled");
   };
@@ -136,6 +147,7 @@ const Settings = () => {
                 id="enable-backend"
                 checked={settings.enabled}
                 onCheckedChange={handleToggleEnabled}
+                disabled={isTesting}
               />
             </div>
 

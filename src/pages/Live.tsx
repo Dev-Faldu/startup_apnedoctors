@@ -383,23 +383,23 @@ const Live = () => {
                       ))}
                       {currentTriage.extractedInfo.bodyPart && (
                         <li className="text-foreground">
-                          📍 Location: {currentTriage.extractedInfo.bodyPart}
+                           Location: {currentTriage.extractedInfo.bodyPart}
                         </li>
                       )}
                       {currentTriage.extractedInfo.duration && (
                         <li className="text-foreground">
-                          ⏱️ Duration: {currentTriage.extractedInfo.duration}
+                           Duration: {currentTriage.extractedInfo.duration}
                         </li>
                       )}
                       {currentTriage.extractedInfo.severity && (
                         <li className="text-foreground">
-                          📊 Severity: {currentTriage.extractedInfo.severity}
+                           Severity: {currentTriage.extractedInfo.severity}
                         </li>
                       )}
                       {currentTriage.extractedInfo.redFlags && 
                         currentTriage.extractedInfo.redFlags.length > 0 && (
                         <li className="text-destructive font-medium">
-                          ⚠️ Red Flags: {currentTriage.extractedInfo.redFlags.join(', ')}
+                           Red Flags: {currentTriage.extractedInfo.redFlags.join(', ')}
                         </li>
                       )}
                     </ul>
@@ -474,7 +474,7 @@ const Live = () => {
               </div>
               
               <p className="text-xs text-muted-foreground px-4">
-                ⚠️ This AI consultation is not a substitute for professional medical advice. 
+                 This AI consultation is not a substitute for professional medical advice. 
                 Always consult a qualified healthcare professional for diagnosis and treatment.
               </p>
             </Card>

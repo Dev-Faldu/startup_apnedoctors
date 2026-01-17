@@ -226,7 +226,7 @@ export function LiveSessionReport({ session, triage, visionResults, onClose }: L
     <div class="report-id">Report ID: ${report.reportId}<br/>Generated: ${new Date(report.generatedAt).toLocaleString()}</div>
   </div>
 
-  <h2>📋 Patient Summary</h2>
+  <h2>Patient Summary</h2>
   <div class="section">
     <p><strong>Chief Complaint:</strong> ${report.patientSummary.chiefComplaint}</p>
     <p><strong>Session Duration:</strong> ${report.sessionDuration}</p>
@@ -234,7 +234,7 @@ export function LiveSessionReport({ session, triage, visionResults, onClose }: L
     ${report.patientSummary.conversationSummary ? `<p><strong>Conversation Summary:</strong> ${report.patientSummary.conversationSummary}</p>` : ''}
   </div>
 
-  <h2>🔬 Triage Assessment</h2>
+  <h2>Triage Assessment</h2>
   <div class="section" style="text-align: center;">
     <div class="triage-badge triage-${report.triageAssessment.color.toLowerCase()}">${report.triageAssessment.category}</div>
     <p style="margin-top: 15px;"><strong>Urgency:</strong> ${report.triageAssessment.urgency}</p>
@@ -242,7 +242,7 @@ export function LiveSessionReport({ session, triage, visionResults, onClose }: L
   </div>
 
   ${report.redFlags.length > 0 ? `
-  <h2>⚠️ Warning Signs</h2>
+  <h2>Warning Signs</h2>
   ${report.redFlags.map(rf => `
     <div class="red-flag">
       <strong>${rf.flag}</strong><br/>
@@ -252,7 +252,7 @@ export function LiveSessionReport({ session, triage, visionResults, onClose }: L
   `).join('')}
   ` : ''}
 
-  <h2>💊 Recommendations</h2>
+  <h2>Recommendations</h2>
   <div class="section">
     ${report.recommendations.immediate.length > 0 ? `
     <h3>Immediate Actions</h3>
@@ -269,7 +269,7 @@ export function LiveSessionReport({ session, triage, visionResults, onClose }: L
     ${report.recommendations.followUp ? `<p><strong>Follow-up:</strong> ${report.recommendations.followUp}</p>` : ''}
   </div>
 
-  <h2>🤖 AI Analysis Confidence</h2>
+  <h2>AI Analysis Confidence</h2>
   <div class="section" style="text-align: center;">
     <div class="metric"><div class="metric-value">${report.confidenceMetrics.overall}%</div><div class="metric-label">Overall</div></div>
     <div class="metric"><div class="metric-value">${report.confidenceMetrics.voiceAnalysis}%</div><div class="metric-label">Voice</div></div>
