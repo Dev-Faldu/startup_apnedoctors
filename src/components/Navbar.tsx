@@ -18,18 +18,19 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/30">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="relative">
-              <Activity className="w-8 h-8 text-primary animate-pulse-glow" />
-              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
-            </div>
-            <span className="text-xl font-bold text-foreground">
-              Apne<span className="text-primary text-glow-sm">Doctors</span>
-            </span>
-          </Link>
+  <div className="container mx-auto px-4">
+    <div className="flex items-center justify-between py-2 sm:py-3">
+      
+      {/* Logo */}
+      <Link to="/" className="flex items-center gap-1.5 shrink-0">
+        <img 
+          src="/logo_apnedoctors.png" 
+          alt="ApneDoctors Logo"
+          className="h-10 sm:h-12 md:h-14 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+        />
+      </Link>
+      
+
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
