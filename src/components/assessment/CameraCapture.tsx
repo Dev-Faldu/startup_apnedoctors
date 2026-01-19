@@ -2,12 +2,13 @@ import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, Upload, X, ChevronRight, RotateCcw, Eye } from 'lucide-react';
 import { TriageResult } from '@/types/assessment';
+import { ClinicalTriageOutput } from '@/types/clinical-assessment';
 
 interface CameraCaptureProps {
-  onSubmit: (imageBase64: string | null, bodyPart: string) => void;
+  onSubmit: (imageBase64: string | null, bodyPart?: string) => void;
   isLoading: boolean;
   bodyPart: string;
-  triageResult: TriageResult | null;
+  triageResult: TriageResult | ClinicalTriageOutput | null;
 }
 
 export function CameraCapture({ onSubmit, isLoading, bodyPart, triageResult }: CameraCaptureProps) {

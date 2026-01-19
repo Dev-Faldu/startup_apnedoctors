@@ -16,7 +16,7 @@ from faster_whisper import WhisperModel
 from pydantic import BaseModel
 
 # Configuration
-MODEL_SIZE = os.getenv("MODEL_SIZE", "large-v3")
+MODEL_SIZE = os.getenv("MODEL_SIZE", "medium")
 DEVICE = os.getenv("DEVICE", "cuda")
 COMPUTE_TYPE = os.getenv("COMPUTE_TYPE", "float16")
 
@@ -145,4 +145,4 @@ async def transcribe_stream(request: TranscribeRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)

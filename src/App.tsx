@@ -7,6 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Assessment from "./pages/Assessment";
+import ClinicalAssessment from "./pages/ClinicalAssessment";
+import DocumentAnalysis from "./pages/DocumentAnalysis";
 import Doctor from "./pages/Doctor";
 import Admin from "./pages/Admin";
 import Live from "./pages/Live";
@@ -33,6 +35,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Assessment />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/clinical-assessment" 
+              element={
+                <ProtectedRoute>
+                  <ClinicalAssessment />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/document-analysis" 
+              element={
+                <ProtectedRoute>
+                  <DocumentAnalysis />
                 </ProtectedRoute>
               } 
             />

@@ -48,7 +48,7 @@ const HeroSection = () => {
                 variant="hero" 
                 size="xl" 
                 className="group"
-                onClick={() => navigate('/assessment')}
+                onClick={() => navigate('/clinical-assessment')}
               >
                 Start Assessment
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

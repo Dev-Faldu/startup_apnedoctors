@@ -17,7 +17,7 @@ from TTS.api import TTS
 
 # Configuration
 MODEL_NAME = os.getenv("MODEL_NAME", "tts_models/multilingual/multi-dataset/xtts_v2")
-DEVICE = os.getenv("DEVICE", "cuda")
+DEVICE = os.getenv("DEVICE", "cpu")
 
 app = FastAPI(title="ApneDoctors TTS Service")
 
@@ -78,8 +78,10 @@ async def synthesize(request: SynthesizeRequest):
         wav = tts_model.tts(
             text=text,
             language=request.language,
-            speaker_wav=CLINICAL_SPEAKER_WAV,  # None uses default voice
+            speaker_wav=None,
+            
             speed=request.speed
+
         )
         
         # Convert to numpy array
@@ -134,4 +136,4 @@ async def list_voices():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

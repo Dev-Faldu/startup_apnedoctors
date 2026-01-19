@@ -39,7 +39,7 @@ const CTASection = () => {
               variant="hero" 
               size="xl" 
               className="group mb-8"
-              onClick={() => navigate('/assessment')}
+              onClick={() => navigate('/clinical-assessment')}
             >
               Start AI Injury Scan
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

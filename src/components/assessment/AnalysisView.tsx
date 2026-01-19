@@ -1,15 +1,48 @@
 import { Button } from '@/components/ui/button';
 import { TriageResult, VisionAnalysisResult } from '@/types/assessment';
+import { ClinicalTriageOutput, VisualScanMetadata } from '@/types/clinical-assessment';
 import { Activity, Eye, AlertTriangle, CheckCircle, ChevronRight, FileText } from 'lucide-react';
 
 interface AnalysisViewProps {
-  triageResult: TriageResult | null;
-  visionResult: VisionAnalysisResult | null;
+  triageResult: TriageResult | ClinicalTriageOutput | null;
+  visionResult: VisionAnalysisResult | VisualScanMetadata | null;
   onGenerateReport: () => void;
   isLoading: boolean;
 }
 
+// Type guard to check if vision result is VisionAnalysisResult
+function isVisionAnalysisResult(result: VisionAnalysisResult | VisualScanMetadata): result is VisionAnalysisResult {
+  return 'inflammationScore' in result && 'rednessLevel' in result;
+}
+
+// Helper to normalize vision data for display
+function normalizeVisionData(result: VisionAnalysisResult | VisualScanMetadata) {
+  if (isVisionAnalysisResult(result)) {
+    return {
+      inflammationScore: result.inflammationScore,
+      rednessDetected: result.rednessDetected,
+      rednessLevel: result.rednessLevel,
+      swellingDetected: result.swellingDetected,
+      swellingLevel: result.swellingLevel,
+      observations: result.observations,
+      recommendedAction: result.recommendedAction,
+    };
+  }
+  // VisualScanMetadata type
+  return {
+    inflammationScore: result.inflammationIndicators?.score ?? 0,
+    rednessDetected: result.detectedFeatures?.redness?.detected ?? false,
+    rednessLevel: (result.detectedFeatures?.redness?.level as 'none' | 'mild' | 'moderate' | 'severe') ?? 'none',
+    swellingDetected: result.detectedFeatures?.swelling?.detected ?? false,
+    swellingLevel: (result.detectedFeatures?.swelling?.level as 'none' | 'mild' | 'moderate' | 'severe') ?? 'none',
+    observations: result.processingNotes ?? [],
+    recommendedAction: result.processingNotes?.[0] ?? 'Visual assessment completed.',
+  };
+}
+
 export function AnalysisView({ triageResult, visionResult, onGenerateReport, isLoading }: AnalysisViewProps) {
+  const normalizedVision = visionResult ? normalizeVisionData(visionResult) : null;
+  
   const getTriageLevelColor = (level: number) => {
     if (level <= 2) return 'text-red-400 bg-red-500/20 border-red-500/30';
     if (level <= 3) return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
@@ -113,7 +146,7 @@ export function AnalysisView({ triageResult, visionResult, onGenerateReport, isL
                 </div>
                 <ul className="text-xs text-red-400/80 space-y-1">
                   {triageResult.redFlags.map((flag, i) => (
-                    <li key={i}>• {flag}</li>
+                    <li key={i}>• {typeof flag === 'string' ? flag : flag.description}</li>
                   ))}
                 </ul>
               </div>
@@ -122,7 +155,7 @@ export function AnalysisView({ triageResult, visionResult, onGenerateReport, isL
         )}
 
         {/* Vision Analysis Card */}
-        {visionResult && (
+        {normalizedVision && (
           <div className="holographic-card p-6 rounded-xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
@@ -138,14 +171,14 @@ export function AnalysisView({ triageResult, visionResult, onGenerateReport, isL
             <div className="p-4 bg-background/30 rounded-lg mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">Inflammation Score</span>
-                <span className="text-lg font-bold text-primary">{visionResult.inflammationScore}/10</span>
+                <span className="text-lg font-bold text-primary">{normalizedVision.inflammationScore}/10</span>
               </div>
               <div className="w-full h-3 bg-background/50 rounded-full overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all"
                   style={{ 
-                    width: `${visionResult.inflammationScore * 10}%`,
-                    background: `linear-gradient(90deg, hsl(var(--primary)), ${visionResult.inflammationScore > 6 ? '#ef4444' : 'hsl(var(--secondary))'})`
+                    width: `${normalizedVision.inflammationScore * 10}%`,
+                    background: `linear-gradient(90deg, hsl(var(--primary)), ${normalizedVision.inflammationScore > 6 ? '#ef4444' : 'hsl(var(--secondary))'})`
                   }}
                 />
               </div>
@@ -155,38 +188,38 @@ export function AnalysisView({ triageResult, visionResult, onGenerateReport, isL
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="p-3 bg-background/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  {visionResult.rednessDetected ? (
+                  {normalizedVision.rednessDetected ? (
                     <AlertTriangle className="w-4 h-4 text-red-400" />
                   ) : (
                     <CheckCircle className="w-4 h-4 text-green-400" />
                   )}
                   <span className="text-xs font-medium">Redness</span>
                 </div>
-                <span className={`text-sm font-semibold ${getSeverityColor(visionResult.rednessLevel)}`}>
-                  {visionResult.rednessLevel.charAt(0).toUpperCase() + visionResult.rednessLevel.slice(1)}
+                <span className={`text-sm font-semibold ${getSeverityColor(normalizedVision.rednessLevel)}`}>
+                  {normalizedVision.rednessLevel.charAt(0).toUpperCase() + normalizedVision.rednessLevel.slice(1)}
                 </span>
               </div>
               <div className="p-3 bg-background/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-1">
-                  {visionResult.swellingDetected ? (
+                  {normalizedVision.swellingDetected ? (
                     <AlertTriangle className="w-4 h-4 text-yellow-400" />
                   ) : (
                     <CheckCircle className="w-4 h-4 text-green-400" />
                   )}
                   <span className="text-xs font-medium">Swelling</span>
                 </div>
-                <span className={`text-sm font-semibold ${getSeverityColor(visionResult.swellingLevel)}`}>
-                  {visionResult.swellingLevel.charAt(0).toUpperCase() + visionResult.swellingLevel.slice(1)}
+                <span className={`text-sm font-semibold ${getSeverityColor(normalizedVision.swellingLevel)}`}>
+                  {normalizedVision.swellingLevel.charAt(0).toUpperCase() + normalizedVision.swellingLevel.slice(1)}
                 </span>
               </div>
             </div>
 
             {/* Observations */}
-            {visionResult.observations.length > 0 && (
+            {normalizedVision.observations.length > 0 && (
               <div className="mb-4">
                 <h4 className="text-sm font-medium text-foreground mb-2">Observations</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  {visionResult.observations.slice(0, 4).map((obs, i) => (
+                  {normalizedVision.observations.slice(0, 4).map((obs, i) => (
                     <li key={i} className="flex items-start gap-2">
                       <span className="text-primary">•</span>
                       {obs}
@@ -198,7 +231,7 @@ export function AnalysisView({ triageResult, visionResult, onGenerateReport, isL
 
             {/* Recommended Action */}
             <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg">
-              <p className="text-xs text-primary">{visionResult.recommendedAction}</p>
+              <p className="text-xs text-primary">{normalizedVision.recommendedAction}</p>
             </div>
           </div>
         )}

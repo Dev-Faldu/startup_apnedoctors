@@ -40,3 +40,9 @@ verify_jwt = false
 
 [functions.ai-emergency-check]
 verify_jwt = false
+
+[functions.ai-document-analysis]
+verify_jwt = false
+
+[functions.ai-live-session-report]
+verify_jwt = false

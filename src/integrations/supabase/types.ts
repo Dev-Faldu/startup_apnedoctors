@@ -14,54 +14,196 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_reasoning_traces: {
+        Row: {
+          assessment_id: string | null
+          confidence_score: number | null
+          contributing_rules: string[] | null
+          created_at: string
+          id: string
+          input_data: Json
+          model_used: string | null
+          output_data: Json
+          processing_time_ms: number | null
+          trace_type: string
+          uncertainty_factors: string[] | null
+        }
+        Insert: {
+          assessment_id?: string | null
+          confidence_score?: number | null
+          contributing_rules?: string[] | null
+          created_at?: string
+          id?: string
+          input_data: Json
+          model_used?: string | null
+          output_data: Json
+          processing_time_ms?: number | null
+          trace_type: string
+          uncertainty_factors?: string[] | null
+        }
+        Update: {
+          assessment_id?: string | null
+          confidence_score?: number | null
+          contributing_rules?: string[] | null
+          created_at?: string
+          id?: string
+          input_data?: Json
+          model_used?: string | null
+          output_data?: Json
+          processing_time_ms?: number | null
+          trace_type?: string
+          uncertainty_factors?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_reasoning_traces_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_context: {
+        Row: {
+          allergies: string[] | null
+          assessment_id: string | null
+          created_at: string
+          current_medications: string[] | null
+          has_fever: boolean | null
+          has_limited_mobility: boolean | null
+          has_numbness: boolean | null
+          has_previous_injury: boolean | null
+          has_recent_trauma: boolean | null
+          has_swelling: boolean | null
+          id: string
+          pain_pattern: string | null
+          pain_quality: string | null
+          pre_existing_conditions: string[] | null
+          previous_injury_details: string | null
+          recent_activities: string | null
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string[] | null
+          assessment_id?: string | null
+          created_at?: string
+          current_medications?: string[] | null
+          has_fever?: boolean | null
+          has_limited_mobility?: boolean | null
+          has_numbness?: boolean | null
+          has_previous_injury?: boolean | null
+          has_recent_trauma?: boolean | null
+          has_swelling?: boolean | null
+          id?: string
+          pain_pattern?: string | null
+          pain_quality?: string | null
+          pre_existing_conditions?: string[] | null
+          previous_injury_details?: string | null
+          recent_activities?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string[] | null
+          assessment_id?: string | null
+          created_at?: string
+          current_medications?: string[] | null
+          has_fever?: boolean | null
+          has_limited_mobility?: boolean | null
+          has_numbness?: boolean | null
+          has_previous_injury?: boolean | null
+          has_recent_trauma?: boolean | null
+          has_swelling?: boolean | null
+          id?: string
+          pain_pattern?: string | null
+          pain_quality?: string | null
+          pre_existing_conditions?: string[] | null
+          previous_injury_details?: string | null
+          recent_activities?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_context_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: true
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessments: {
         Row: {
           additional_info: string | null
           ai_triage_output: Json | null
           ai_vision_output: Json | null
           body_part: string
+          consent_given: boolean | null
+          consent_timestamp: string | null
+          context_factors: Json | null
           created_at: string
           duration: string
+          emergency_keywords_detected: string[] | null
           id: string
           image_url: string | null
+          intake_completed_at: string | null
+          normalized_symptoms: Json | null
           pain_level: number
           patient_id: string | null
           session_id: string
           status: string
           symptoms: string
           updated_at: string
+          visual_consent_given: boolean | null
+          visual_consent_timestamp: string | null
         }
         Insert: {
           additional_info?: string | null
           ai_triage_output?: Json | null
           ai_vision_output?: Json | null
           body_part: string
+          consent_given?: boolean | null
+          consent_timestamp?: string | null
+          context_factors?: Json | null
           created_at?: string
           duration: string
+          emergency_keywords_detected?: string[] | null
           id?: string
           image_url?: string | null
+          intake_completed_at?: string | null
+          normalized_symptoms?: Json | null
           pain_level: number
           patient_id?: string | null
           session_id?: string
           status?: string
           symptoms: string
           updated_at?: string
+          visual_consent_given?: boolean | null
+          visual_consent_timestamp?: string | null
         }
         Update: {
           additional_info?: string | null
           ai_triage_output?: Json | null
           ai_vision_output?: Json | null
           body_part?: string
+          consent_given?: boolean | null
+          consent_timestamp?: string | null
+          context_factors?: Json | null
           created_at?: string
           duration?: string
+          emergency_keywords_detected?: string[] | null
           id?: string
           image_url?: string | null
+          intake_completed_at?: string | null
+          normalized_symptoms?: Json | null
           pain_level?: number
           patient_id?: string | null
           session_id?: string
           status?: string
           symptoms?: string
           updated_at?: string
+          visual_consent_given?: boolean | null
+          visual_consent_timestamp?: string | null
         }
         Relationships: [
           {
@@ -241,6 +383,112 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_flags: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          assessment_id: string | null
+          confidence: number | null
+          created_at: string
+          detected_from: string
+          flag_code: string
+          flag_description: string
+          flag_type: string
+          id: string
+          requires_escalation: boolean | null
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          assessment_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          detected_from: string
+          flag_code: string
+          flag_description: string
+          flag_type: string
+          id?: string
+          requires_escalation?: boolean | null
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          assessment_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          detected_from?: string
+          flag_code?: string
+          flag_description?: string
+          flag_type?: string
+          id?: string
+          requires_escalation?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_flags_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      symptom_entries: {
+        Row: {
+          ai_extracted: boolean | null
+          assessment_id: string | null
+          confidence_score: number | null
+          created_at: string
+          frequency: string | null
+          id: string
+          onset_type: string | null
+          relieving_factors: string[] | null
+          severity: string | null
+          symptom_category: string | null
+          symptom_normalized: string | null
+          symptom_raw: string
+          triggers: string[] | null
+        }
+        Insert: {
+          ai_extracted?: boolean | null
+          assessment_id?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          frequency?: string | null
+          id?: string
+          onset_type?: string | null
+          relieving_factors?: string[] | null
+          severity?: string | null
+          symptom_category?: string | null
+          symptom_normalized?: string | null
+          symptom_raw: string
+          triggers?: string[] | null
+        }
+        Update: {
+          ai_extracted?: boolean | null
+          assessment_id?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          frequency?: string | null
+          id?: string
+          onset_type?: string | null
+          relieving_factors?: string[] | null
+          severity?: string | null
+          symptom_category?: string | null
+          symptom_normalized?: string | null
+          symptom_raw?: string
+          triggers?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "symptom_entries_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       triage_reports: {
         Row: {
           assessment_id: string
@@ -300,6 +548,47 @@ export type Database = {
           },
         ]
       }
+      user_consent_logs: {
+        Row: {
+          assessment_id: string | null
+          consent_given: boolean
+          consent_type: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          assessment_id?: string | null
+          consent_given: boolean
+          consent_type: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string | null
+          consent_given?: boolean
+          consent_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_consent_logs_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -320,6 +609,68 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      visual_scan_metadata: {
+        Row: {
+          ai_annotations: Json | null
+          assessment_id: string | null
+          asymmetry_score: number | null
+          body_region_detected: string | null
+          color_analysis: Json | null
+          created_at: string
+          detected_features: Json | null
+          id: string
+          image_dimensions: Json | null
+          image_hash: string | null
+          inflammation_indicators: Json | null
+          processing_notes: string[] | null
+          quality_score: number | null
+          scan_timestamp: string
+          texture_analysis: Json | null
+        }
+        Insert: {
+          ai_annotations?: Json | null
+          assessment_id?: string | null
+          asymmetry_score?: number | null
+          body_region_detected?: string | null
+          color_analysis?: Json | null
+          created_at?: string
+          detected_features?: Json | null
+          id?: string
+          image_dimensions?: Json | null
+          image_hash?: string | null
+          inflammation_indicators?: Json | null
+          processing_notes?: string[] | null
+          quality_score?: number | null
+          scan_timestamp?: string
+          texture_analysis?: Json | null
+        }
+        Update: {
+          ai_annotations?: Json | null
+          assessment_id?: string | null
+          asymmetry_score?: number | null
+          body_region_detected?: string | null
+          color_analysis?: Json | null
+          created_at?: string
+          detected_features?: Json | null
+          id?: string
+          image_dimensions?: Json | null
+          image_hash?: string | null
+          inflammation_indicators?: Json | null
+          processing_notes?: string[] | null
+          quality_score?: number | null
+          scan_timestamp?: string
+          texture_analysis?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visual_scan_metadata_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
