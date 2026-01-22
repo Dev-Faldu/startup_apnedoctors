@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Scan, Shield, Zap } from "lucide-react";
+import { ArrowRight, Scan, Shield, Zap, FileText } from "lucide-react";
 
 const CTASection = () => {
   const navigate = useNavigate();
@@ -34,16 +34,27 @@ const CTASection = () => {
               No registration required.
             </p>
 
-            {/* CTA Button */}
-            <Button 
-              variant="hero" 
-              size="xl" 
-              className="group mb-8"
-              onClick={() => navigate('/clinical-assessment')}
-            >
-              Start AI Injury Scan
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Button 
+                variant="hero" 
+                size="xl" 
+                className="group"
+                onClick={() => navigate('/clinical-assessment')}
+              >
+                Start AI Injury Scan
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button 
+                variant="heroOutline" 
+                size="xl" 
+                className="group"
+                onClick={() => navigate('/document-analysis')}
+              >
+                <FileText className="w-5 h-5" />
+                Upload Medical Document
+              </Button>
+            </div>
 
             {/* Trust Indicators */}
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">

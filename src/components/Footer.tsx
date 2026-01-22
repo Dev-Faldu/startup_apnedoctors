@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Activity, Mail, MapPin, Phone } from "lucide-react";
 
 const Footer = () => {
@@ -6,15 +7,16 @@ const Footer = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="grid md:grid-cols-4 gap-12">
           {/* Brand */}
-          <div className="md:col-span-2">
-            <a href="#" className="flex items-center gap-2 mb-4">
-              <div className="relative">
-                <Activity className="w-8 h-8 text-primary" />
-              </div>
-              <span className="text-xl font-bold text-foreground">
-                Apne<span className="text-primary">Doctors</span>
-              </span>
-            </a>
+          {/* Brand */}
+<div className="md:col-span-1">
+  <Link to="/" className="flex items-center gap-1.5 shrink-0 mb-4">
+    <img
+      src="/logo_apnedoctors.png"
+      alt="ApneDoctors Logo"
+      className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto object-contain transition-transform duration-200 hover:scale-[1.02]"
+      />
+  </Link>
+
             <p className="text-muted-foreground text-sm max-w-md mb-6">
               Intelligent remote healthcare platform powered by multimodal AI. 
               Bringing hospital-level preliminary assessment to your smartphone.
@@ -26,7 +28,7 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Links */}
+          {/* Platform Links */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">Platform</h4>
             <ul className="space-y-3 text-sm">
@@ -37,21 +39,39 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* AI Tools Links */}
           <div>
+            <h4 className="font-semibold text-foreground mb-4">AI Tools</h4>
+            <ul className="space-y-3 text-sm">
+              <FooterRouteLink to="/clinical-assessment">Clinical Assessment</FooterRouteLink>
+              <FooterRouteLink to="/document-analysis">Document Analysis</FooterRouteLink>
+              <FooterRouteLink to="/live">Live AI Consultation</FooterRouteLink>
+              <FooterRouteLink to="/assessment">Quick Assessment</FooterRouteLink>
+            </ul>
+          </div>
+
+          {/* Account & Contact */}
+          <div>
+            <h4 className="font-semibold text-foreground mb-4">Account</h4>
+            <ul className="space-y-3 text-sm mb-6">
+              <FooterRouteLink to="/login">Sign In</FooterRouteLink>
+              <FooterRouteLink to="/signup">Create Account</FooterRouteLink>
+              <FooterRouteLink to="/settings">Settings</FooterRouteLink>
+            </ul>
+            
             <h4 className="font-semibold text-foreground mb-4">Contact</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-primary" />
-                er.devfaldu@gmail.com
+                er.devfaldu@gmail.com (Dev Faldu) 
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary" />
-                +91 63536 85893
+                +91 63536 85893 
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                Rajkot, Gujarat, India
+                Arpan Hospital, Rajkot, Gujarat, India
               </li>
             </ul>
           </div>
@@ -78,6 +98,14 @@ const FooterLink = ({ href, children }: { href: string; children: React.ReactNod
     <a href={href} className="text-muted-foreground hover:text-primary transition-colors">
       {children}
     </a>
+  </li>
+);
+
+const FooterRouteLink = ({ to, children }: { to: string; children: React.ReactNode }) => (
+  <li>
+    <Link to={to} className="text-muted-foreground hover:text-primary transition-colors">
+      {children}
+    </Link>
   </li>
 );
 

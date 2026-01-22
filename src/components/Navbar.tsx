@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Activity, Stethoscope, Video, Settings, ShieldCheck } from "lucide-react";
+import { Menu, X, Activity, Stethoscope, Video, Settings, ShieldCheck, FileText, ClipboardList } from "lucide-react";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,21 +17,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/30">
-  <div className="container mx-auto px-4">
-    <div className="flex items-center justify-between py-2 sm:py-3">
-      
-      {/* Logo */}
-      <Link to="/" className="flex items-center gap-1.5 shrink-0">
-        <img 
-          src="/logo_apnedoctors.png" 
-          alt="ApneDoctors Logo"
-          className="h-10 sm:h-12 md:h-14 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-        />
-      </Link>
-      
-
-
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/30"> <div className="container mx-auto px-4"> <div className="flex items-center justify-between py-2 sm:py-3"> {/* Logo */} <Link to="/" className="flex items-center gap-1.5 shrink-0"> <img src="/logo_apnedoctors.png" alt="ApneDoctors Logo" className="h-10 sm:h-12 md:h-14 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]" /> </Link>
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
@@ -46,17 +32,19 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <a href="https://apnedoctors-app.vercel.app/" target="_blank" rel="noopener noreferrer">
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
-                Symptom Quiz
-              </Button>
-            </a>
+          <a href="https://apnedoctors-app.vercel.app/" target="_blank" rel="noopener noreferrer"> <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary"> Symptom Quiz </Button> </a>
             {user && (
               <>
                 <Link to="/live">
                   <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
                     <Video className="h-4 w-4" />
                     Live AI
+                  </Button>
+                </Link>
+                <Link to="/document-analysis">
+                  <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                    <FileText className="h-4 w-4" />
+                    Document AI
                   </Button>
                 </Link>
                 {(isDoctor || isAdmin) && (
@@ -80,7 +68,7 @@ const Navbar = () => {
                     <Settings className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Link to="/assessment">
+                <Link to="/clinical-assessment">
                   <Button variant="hero" size="sm">
                     Start Assessment
                   </Button>
@@ -116,15 +104,16 @@ const Navbar = () => {
               <div className="flex flex-col gap-2 pt-4">
                 {user ? (
                   <>
-                    <a href="https://apnedoctors-app.vercel.app/" target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" size="sm" className="w-full gap-2">
-                        Symptom Quiz
-                      </Button>
-                    </a>
                     <Link to="/live" onClick={() => setIsOpen(false)}>
                       <Button variant="ghost" size="sm" className="w-full gap-2">
                         <Video className="h-4 w-4" />
                         Live AI
+                      </Button>
+                    </Link>
+                    <Link to="/document-analysis" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full gap-2">
+                        <FileText className="h-4 w-4" />
+                        Document AI
                       </Button>
                     </Link>
                     {(isDoctor || isAdmin) && (
@@ -149,7 +138,7 @@ const Navbar = () => {
                         Settings
                       </Button>
                     </Link>
-                    <Link to="/assessment" onClick={() => setIsOpen(false)}>
+                    <Link to="/clinical-assessment" onClick={() => setIsOpen(false)}>
                       <Button variant="hero" size="sm" className="w-full">
                         Start Assessment
                       </Button>
@@ -157,11 +146,6 @@ const Navbar = () => {
                   </>
                 ) : (
                   <>
-                    <a href="https://apnedoctors-app.vercel.app/" target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" size="sm" className="w-full">
-                        Symptom Quiz
-                      </Button>
-                    </a>
                     <Link to="/login" onClick={() => setIsOpen(false)}>
                       <Button variant="ghost" size="sm" className="w-full">
                         Sign In

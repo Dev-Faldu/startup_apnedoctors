@@ -1,4 +1,6 @@
-import { Eye, Brain, Move, ShieldCheck, Stethoscope, Scan } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Eye, Brain, Move, ShieldCheck, Stethoscope, Scan, FileText, Video, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const features = [
   {
@@ -6,36 +8,48 @@ const features = [
     title: "Visual Injury Detection",
     description: "Detects swelling, redness, bruising, and visible trauma using computer vision.",
     gradient: "from-cyan-glow/20 to-blue-electric/10",
+    route: "/clinical-assessment",
+    cta: "Start Scan",
   },
   {
     icon: Brain,
-    title: "AI Orthopedic Assistant",
+    title: "AI Medical Assistant",
     description: "Intelligent symptom analysis powered by advanced medical LLMs.",
     gradient: "from-secondary/20 to-cyan-glow/10",
+    route: "/clinical-assessment",
+    cta: "Try AI",
   },
   {
-    icon: Move,
-    title: "Guided Movement Analysis",
-    description: "Real-time pose tracking to assess range of motion and mobility.",
+    icon: Video,
+    title: "Live AI Consultation",
+    description: "Real-time voice and video medical assessment with instant AI feedback.",
     gradient: "from-purple-accent/20 to-secondary/10",
+    route: "/live",
+    cta: "Go Live",
   },
   {
-    icon: ShieldCheck,
-    title: "Responsible Clinical Support",
-    description: "Evidence-based triage with transparent AI decision pathways.",
+    icon: FileText,
+    title: "Document Intelligence",
+    description: "Upload medical reports and get instant AI-powered clinical summaries.",
     gradient: "from-green-500/20 to-cyan-glow/10",
+    route: "/document-analysis",
+    cta: "Analyze Doc",
   },
   {
     icon: Stethoscope,
     title: "Doctor Verified Triage",
     description: "All AI recommendations validated against clinical guidelines.",
     gradient: "from-cyan-glow/20 to-purple-accent/10",
+    route: "/clinical-assessment",
+    cta: "Get Triage",
   },
   {
     icon: Scan,
     title: "Real-Time Scanning",
     description: "Instant analysis with live camera feed and immediate feedback.",
     gradient: "from-secondary/20 to-purple-accent/10",
+    route: "/live",
+    cta: "Start Camera",
   },
 ];
 
@@ -74,6 +88,7 @@ const FeaturesSection = () => {
 
 const FeatureCard = ({ feature, index }: { feature: typeof features[0]; index: number }) => {
   const Icon = feature.icon;
+  const navigate = useNavigate();
   
   return (
     <div 
@@ -94,9 +109,20 @@ const FeatureCard = ({ feature, index }: { feature: typeof features[0]; index: n
         <h3 className="text-xl font-semibold mb-2 text-foreground group-hover:text-primary transition-colors duration-300">
           {feature.title}
         </h3>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed mb-4">
           {feature.description}
         </p>
+
+        {/* CTA Button */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="gap-2 text-primary hover:text-primary hover:bg-primary/10 p-0 h-auto"
+          onClick={() => navigate(feature.route)}
+        >
+          {feature.cta}
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </Button>
 
         {/* Neural Network Decorative Lines */}
         <div className="absolute top-4 right-4 w-16 h-16 opacity-20 group-hover:opacity-40 transition-opacity">

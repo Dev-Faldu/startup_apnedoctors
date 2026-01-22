@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, Building2, Brain, Play } from "lucide-react";
+import { ArrowRight, Shield, Building2, Brain, Play, FileText } from "lucide-react";
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -38,13 +38,11 @@ const HeroSection = () => {
 
             {/* Subtext */}
             <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 animate-fade-in-up delay-200">
-              Instant orthopedic evaluation using multimodal AI, injury vision analysis, 
-              clinical triage, and medical reasoning.
+            Real-time medical intelligence using multimodal AI, vision and voice analysis, clinical triage, and decision-support reasoning.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up delay-300 mt-6">
-
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up delay-300">
               <Button 
                 variant="hero" 
                 size="xl" 
@@ -62,6 +60,15 @@ const HeroSection = () => {
               >
                 <Play className="w-5 h-5" />
                 Try Live AI
+              </Button>
+              <Button 
+                variant="outline" 
+                size="xl" 
+                className="group border-secondary/50 hover:border-secondary hover:bg-secondary/10"
+                onClick={() => navigate('/document-analysis')}
+              >
+                <FileText className="w-5 h-5 text-secondary" />
+                Analyze Document
               </Button>
             </div>
 
