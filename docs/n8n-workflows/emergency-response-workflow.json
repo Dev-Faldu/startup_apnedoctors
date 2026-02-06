@@ -1,0 +1,339 @@
+{
+  "name": "ApneDoctors Emergency Response",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "emergency-alert",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Emergency Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "patientId",
+              "value": "={{ $json.patientId }}"
+            },
+            {
+              "name": "symptoms",
+              "value": "={{ $json.symptoms }}"
+            },
+            {
+              "name": "triageLevel",
+              "value": "={{ $json.triageLevel }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.location || 'Unknown' }}"
+            },
+            {
+              "name": "contactInfo",
+              "value": "={{ $json.contactInfo }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Extract Emergency Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node[\"Extract Emergency Data\"].json.triageLevel }}",
+              "operation": "equal",
+              "value2": "RED"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Check if Critical",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
+        "method": "GET",
+        "qs": {
+          "location": "={{ $node[\"Extract Emergency Data\"].json.location }}",
+          "keyword": "emergency room",
+          "rankby": "distance",
+          "key": "={{ $env.GOOGLE_MAPS_API_KEY }}"
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "Find Nearest Hospital",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "toPhoneNumber": "911",
+        "message": "🚨 MEDICAL EMERGENCY - ApneDoctors Alert\nPatient ID: {{ $node[\"Extract Emergency Data\"].json.patientId }}\nSymptoms: {{ $node[\"Extract Emergency Data\"].json.symptoms }}\nLocation: {{ $node[\"Extract Emergency Data\"].json.location }}\nContact: {{ $node[\"Extract Emergency Data\"].json.contactInfo }}\nTime: {{ $node[\"Extract Emergency Data\"].json.timestamp }}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Call Emergency Services",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        200
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "your-twilio-credentials",
+          "name": "Twilio API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "email": "emergency@nearest-hospital.com",
+        "subject": "🚨 CRITICAL: ApneDoctors Emergency Patient",
+        "body": "<h1>EMERGENCY PATIENT ALERT</h1><p><strong>Patient ID:</strong> {{ $node[\"Extract Emergency Data\"].json.patientId }}</p><p><strong>Symptoms:</strong> {{ $node[\"Extract Emergency Data\"].json.symptoms }}</p><p><strong>Location:</strong> {{ $node[\"Extract Emergency Data\"].json.location }}</p><p><strong>Contact:</strong> {{ $node[\"Extract Emergency Data\"].json.contactInfo }}</p><p><strong>Time:</strong> {{ $node[\"Extract Emergency Data\"].json.timestamp }}</p><p><strong>Nearest Hospital:</strong> {{ $node[\"Find Nearest Hospital\"].json.results[0].name }}</p><p style='color: red; font-weight: bold;'>⚠️ IMMEDIATE MEDICAL ATTENTION REQUIRED</p>",
+        "options": {}
+      },
+      "id": "6",
+      "name": "Alert Hospital",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        200
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "your-smtp-credentials",
+          "name": "SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "webhookUri": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "text": "🚨 *EMERGENCY ALERT*\nPatient: `{{ $node[\"Extract Emergency Data\"].json.patientId }}`\nSymptoms: {{ $node[\"Extract Emergency Data\"].json.symptoms }}\nLocation: {{ $node[\"Extract Emergency Data\"].json.location }}\nContact: {{ $node[\"Extract Emergency Data\"].json.contactInfo }}",
+        "options": {}
+      },
+      "id": "7",
+      "name": "Slack Emergency Channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        200
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "your-slack-credentials",
+          "name": "Slack API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toPhoneNumber": "={{ $node[\"Extract Emergency Data\"].json.contactInfo }}",
+        "message": "ApneDoctors Emergency Alert: Help is on the way. Emergency services have been notified. Stay calm and follow any instructions from medical personnel. Location: {{ $node[\"Extract Emergency Data\"].json.location }}",
+        "options": {}
+      },
+      "id": "8",
+      "name": "Patient SMS Update",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        900,
+        400
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "your-twilio-credentials",
+          "name": "Twilio API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"alertId\": \"{{ $node[\"Extract Emergency Data\"].json.patientId }}-{{ Date.now() }}\", \"status\": \"emergency_services_notified\", \"timestamp\": \"{{ $node[\"Extract Emergency Data\"].json.timestamp }}\", \"nearestHospital\": \"{{ $node[\"Find Nearest Hospital\"].json.results[0].name || 'Unknown' }}\"}",
+        "options": {}
+      },
+      "id": "9",
+      "name": "Return Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "emergency_alerts",
+        "columns": "patient_id,symptoms,triage_level,location,contact_info,alert_time,status",
+        "values": "={{ $node[\"Extract Emergency Data\"].json.patientId }},={{ $node[\"Extract Emergency Data\"].json.symptoms }},={{ $node[\"Extract Emergency Data\"].json.triageLevel }},={{ $node[\"Extract Emergency Data\"].json.location }},={{ $node[\"Extract Emergency Data\"].json.contactInfo }},={{ $node[\"Extract Emergency Data\"].json.timestamp }},sent"
+      },
+      "id": "10",
+      "name": "Log Emergency Event",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        400
+      ],
+      "credentials": {
+        "supabase": {
+          "id": "your-supabase-credentials",
+          "name": "Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Emergency Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Emergency Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Emergency Data": {
+      "main": [
+        [
+          {
+            "node": "Check if Critical",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Critical": {
+      "main": [
+        [
+          {
+            "node": "Find Nearest Hospital",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Patient SMS Update",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Find Nearest Hospital": {
+      "main": [
+        [
+          {
+            "node": "Call Emergency Services",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Emergency Services": {
+      "main": [
+        [
+          {
+            "node": "Alert Hospital",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Hospital": {
+      "main": [
+        [
+          {
+            "node": "Slack Emergency Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Patient SMS Update": {
+      "main": [
+        [
+          {
+            "node": "Log Emergency Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Emergency Event": {
+      "main": [
+        [
+          {
+            "node": "Return Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Emergency Channel": {
+      "main": [
+        [
+          {
+            "node": "Return Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "staticData": null,
+  "settings": {},
+  "meta": {
+    "instanceId": "your-n8n-instance-id"
+  }
+}

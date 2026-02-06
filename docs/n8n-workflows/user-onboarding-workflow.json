@@ -1,0 +1,58 @@
+{
+  "name": "ApneDoctors – User Onboarding",
+  "nodes": [
+    {
+      "name": "User Signup Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [200, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "user-onboarding",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "name": "Welcome Email",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [420, 300],
+      "parameters": {
+        "to": "={{$json.email}}",
+        "subject": "Welcome to ApneDoctors",
+        "text": "Hi {{$json.name}}, welcome to ApneDoctors 🚀"
+      }
+    },
+    {
+      "name": "Wait 1 Day",
+      "type": "n8n-nodes-base.wait",
+      "position": [640, 300],
+      "parameters": {
+        "amount": 1,
+        "unit": "days"
+      }
+    },
+    {
+      "name": "Reminder Email",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [860, 300],
+      "parameters": {
+        "to": "={{$json.email}}",
+        "subject": "Complete Your Profile",
+        "text": "Finish setting up your health profile for better recommendations."
+      }
+    },
+    {
+      "name": "Return OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1080, 300],
+      "parameters": {
+        "responseBody": "{ \"onboarding\": \"started\" }"
+      }
+    }
+  ],
+  "connections": {
+    "User Signup Webhook": { "main": [[{ "node": "Welcome Email", "type": "main" }]] },
+    "Welcome Email": { "main": [[{ "node": "Wait 1 Day", "type": "main" }]] },
+    "Wait 1 Day": { "main": [[{ "node": "Reminder Email", "type": "main" }]] },
+    "Reminder Email": { "main": [[{ "node": "Return OK", "type": "main" }]] }
+  }
+}

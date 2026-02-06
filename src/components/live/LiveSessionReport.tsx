@@ -157,9 +157,9 @@ export function LiveSessionReport({ session, triage, visionResults, onClose }: L
 
       if (fnError) throw fnError;
       setReport(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Report generation error:', err);
-      setError(err.message || 'Failed to generate report');
+      setError(err instanceof Error ? err.message : 'Failed to generate report');
     } finally {
       setIsGenerating(false);
     }

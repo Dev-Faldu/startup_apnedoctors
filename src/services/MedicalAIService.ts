@@ -339,9 +339,9 @@ export class MedicalAIService {
    */
   static async processMedicalReport(params: {
     reportId: string;
-    patientData: any;
-    clinicalFindings: any;
-    recommendations: any;
+    patientData: Record<string, unknown>;
+    clinicalFindings: Record<string, unknown>;
+    recommendations: unknown;
     doctorReview?: boolean;
   }): Promise<{ processed: boolean; distribution: string[] }> {
     try {
@@ -370,7 +370,7 @@ export class MedicalAIService {
     type: "email" | "sms" | "push";
     recipient: string;
     template: string;
-    data: any;
+    data: Record<string, unknown>;
     priority?: "low" | "normal" | "high";
   }): Promise<{ sent: boolean; messageId: string }> {
     try {
@@ -395,9 +395,9 @@ export class MedicalAIService {
     eventType: string;
     userId?: string;
     sessionId?: string;
-    data: any;
+    data: Record<string, unknown>;
     timestamp: string;
-  }): Promise<{ processed: boolean; insights?: any }> {
+  }): Promise<{ processed: boolean; insights?: Record<string, unknown> }> {
     try {
       const response = await fetch(N8N_WEBHOOKS.analyticsProcessing, {
         method: "POST",
@@ -419,7 +419,7 @@ export class MedicalAIService {
   static async verifyDoctor(params: {
     doctorId: string;
     documents: string[];
-    credentials: any;
+    credentials: Record<string, unknown>;
     verificationType: "initial" | "renewal" | "update";
   }): Promise<{ verified: boolean; status: string; nextSteps: string[] }> {
     try {
@@ -443,7 +443,7 @@ export class MedicalAIService {
   static async generateComplianceReport(params: {
     reportType: "hipaa" | "audit" | "regulatory";
     dateRange: { start: string; end: string };
-    filters?: any;
+    filters?: Record<string, unknown>;
   }): Promise<{ reportId: string; generated: boolean; downloadUrl?: string }> {
     try {
       const response = await fetch(N8N_WEBHOOKS.complianceReporting, {
@@ -466,7 +466,7 @@ export class MedicalAIService {
   static async realtimeTriage(params: {
     conversationHistory?: Array<{ role: string; content: string }>;
     currentMessage: string;
-    visionContext?: any;
+    visionContext?: unknown;
     sessionId?: string;
   }): Promise<RealtimeTriageResult> {
     const { data, error } = await supabase.functions.invoke("ai-realtime-triage", {
@@ -496,7 +496,7 @@ export class MedicalAIService {
    * Generate comprehensive medical report
    */
   static async generateReport(params: {
-    patientInfo?: any;
+    patientInfo?: Record<string, unknown>;
     symptomAnalysis?: SymptomAnalysisResult;
     visionAnalysis?: ObjectDetectionResult;
     poseAnalysis?: PoseAnalysisResult;

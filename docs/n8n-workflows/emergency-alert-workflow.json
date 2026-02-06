@@ -1,0 +1,101 @@
+{
+  "name": "ApneDoctors – Emergency Alert",
+  "nodes": [
+    {
+      "id": "Webhook",
+      "name": "Emergency Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "emergency-alert",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "Validate",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.function",
+      "position": [420, 300],
+      "parameters": {
+        "functionCode": "if (!$json.patientId || !$json.triageLevel) {\n  throw new Error('Invalid emergency payload');\n}\nreturn $items;"
+      }
+    },
+    {
+      "id": "IF",
+      "name": "Is RED Triage?",
+      "type": "n8n-nodes-base.if",
+      "position": [640, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.triageLevel}}",
+              "operation": "equals",
+              "value2": "RED"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Email",
+      "name": "Send Hospital Email",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [860, 200],
+      "parameters": {
+        "to": "emergency@hospital.com",
+        "subject": "🚨 Emergency Patient Alert",
+        "text": "Patient ID: {{$json.patientId}}\nSymptoms: {{$json.symptoms}}\nLocation: {{$json.location}}"
+      }
+    },
+    {
+      "id": "SMS",
+      "name": "Send Emergency SMS",
+      "type": "n8n-nodes-base.twilio",
+      "position": [860, 400],
+      "parameters": {
+        "from": "+1234567890",
+        "to": "={{$json.contactInfo}}",
+        "message": "🚨 Emergency detected. Help is being dispatched."
+      }
+    },
+    {
+      "id": "Log",
+      "name": "Log Incident",
+      "type": "n8n-nodes-base.set",
+      "position": [1080, 300],
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "alertId", "value": "={{$execution.id}}" },
+            { "name": "status", "value": "DISPATCHED" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Response",
+      "name": "Return Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1280, 300],
+      "parameters": {
+        "responseBody": "{ \"success\": true, \"alertId\": \"={{$execution.id}}\" }"
+      }
+    }
+  ],
+  "connections": {
+    "Emergency Webhook": { "main": [[{ "node": "Validate Payload", "type": "main" }]] },
+    "Validate Payload": { "main": [[{ "node": "Is RED Triage?", "type": "main" }]] },
+    "Is RED Triage?": {
+      "main": [
+        [{ "node": "Send Hospital Email", "type": "main" }, { "node": "Send Emergency SMS", "type": "main" }],
+        []
+      ]
+    },
+    "Send Hospital Email": { "main": [[{ "node": "Log Incident", "type": "main" }]] },
+    "Send Emergency SMS": { "main": [[{ "node": "Log Incident", "type": "main" }]] },
+    "Log Incident": { "main": [[{ "node": "Return Response", "type": "main" }]] }
+  }
+}

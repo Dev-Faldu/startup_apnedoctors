@@ -320,10 +320,10 @@ export const useLiveSession = () => {
 
       return result;
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Voice processing error:', error);
       
-      const errorMsg = error?.message || 'Unable to process your input';
+      const errorMsg = error instanceof Error ? error.message : 'Unable to process your input';
       setTriageError(errorMsg);
       
       toast({
@@ -377,9 +377,9 @@ export const useLiveSession = () => {
       // Detections are now saved in the edge function
       return result;
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Vision analysis error:', error);
-      setVisionError(error?.message || 'Vision analysis failed');
+      setVisionError(error instanceof Error ? error.message : 'Vision analysis failed');
       return null;
     }
   }, [dbSessionId]);

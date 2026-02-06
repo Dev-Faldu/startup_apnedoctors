@@ -14,6 +14,7 @@ import { AnalysisView } from '@/components/assessment/AnalysisView';
 import { ReportView } from '@/components/assessment/ReportView';
 import { useState } from 'react';
 import { MedicalReport } from '@/types/assessment';
+import type { ClinicalAssessmentStep } from '@/types/clinical-assessment';
 
 export default function ClinicalAssessment() {
   const {
@@ -35,7 +36,7 @@ export default function ClinicalAssessment() {
     const stepOrder = ['welcome', 'consent', 'body-location', 'pain-assessment', 'duration', 'symptoms', 'context', 'review', 'visual-consent', 'visual-scan', 'analysis', 'report'];
     const currentIndex = stepOrder.indexOf(state.currentStep);
     if (currentIndex > 0) {
-      goToStep(stepOrder[currentIndex - 1] as any);
+      goToStep(stepOrder[currentIndex - 1] as ClinicalAssessmentStep);
     }
   };
 
@@ -77,7 +78,7 @@ export default function ClinicalAssessment() {
             painPattern={state.intakeData.painPattern}
             painQuality={state.intakeData.painQuality}
             onContinue={(painLevel, painPattern, painQuality) => {
-              updateIntakeData({ painLevel, painPattern: painPattern as any, painQuality: painQuality as any });
+              updateIntakeData({ painLevel, painPattern, painQuality });
               goToStep('duration');
             }}
           />
@@ -122,7 +123,7 @@ export default function ClinicalAssessment() {
         return (
           <ReviewStep
             intakeData={state.intakeData}
-            onEdit={(step) => goToStep(step as any)}
+            onEdit={(step) => goToStep(step as ClinicalAssessmentStep)}
             onSubmit={submitForTriage}
             isLoading={state.isLoading}
           />

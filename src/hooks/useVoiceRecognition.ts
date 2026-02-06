@@ -11,11 +11,18 @@ export const useVoiceRecognition = (options: UseVoiceRecognitionOptions = {}) =>
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSupported, setIsSupported] = useState(true);
-  const recognitionRef = useRef<any>(null);
+  interface SpeechRecognitionConstructor {
+    new(): { start(): void; stop(): void; continuous: boolean; interimResults: boolean; lang: string; onresult: ((e: SpeechRecognitionEvent) => void) | null; onerror: ((e: { error: string }) => void) | null; onend: (() => void) | null };
+  }
+  interface WindowWithSpeech extends Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+  const recognitionRef = useRef<InstanceType<SpeechRecognitionConstructor> | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognitionAPI = (window as WindowWithSpeech).SpeechRecognition || (window as WindowWithSpeech).webkitSpeechRecognition;
     if (!SpeechRecognitionAPI) {
       setIsSupported(false);
       return;
@@ -111,6 +118,3 @@ export const useVoiceRecognition = (options: UseVoiceRecognitionOptions = {}) =>
     resetTranscript,
   };
 };
-
-// Web Speech API types - using 'any' to avoid conflicts with lib.dom.d.ts
-type SpeechRecognitionType = any;

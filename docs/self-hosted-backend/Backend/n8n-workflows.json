@@ -1,0 +1,732 @@
+{
+  "workflows": [
+    {
+      "name": "ApneDoctors Emergency Workflow",
+      "description": "Handles RED triage emergencies with immediate notifications and escalation",
+      "nodes": [
+        {
+          "parameters": {
+            "httpMethod": "POST",
+            "path": "emergency",
+            "responseMode": "responseNode",
+            "options": {}
+          },
+          "name": "Emergency Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "typeVersion": 1,
+          "position": [250, 300]
+        },
+        {
+          "parameters": {
+            "operation": "create",
+            "resource": "notification",
+            "options": {
+              "priority": "high",
+              "sound": "emergency"
+            },
+            "title": "🚨 MEDICAL EMERGENCY",
+            "message": "={{$json[\"symptoms\"]}} - Call ID: {{$json[\"callId\"]}}",
+            "recipients": "emergency-team@apnedoctors.com"
+          },
+          "name": "Send Emergency Notification",
+          "type": "n8n-nodes-base.pushover",
+          "typeVersion": 1,
+          "position": [450, 300]
+        },
+        {
+          "parameters": {
+            "operation": "sendSms",
+            "from": "+1234567890",
+            "to": "={{$json[\"emergencyContacts\"]}}",
+            "message": "EMERGENCY: Patient requires immediate assistance. Call ID: {{$json[\"callId\"]}}. Location: {{$json[\"location\"]}}. Symptoms: {{$json[\"symptoms\"]}}"
+          },
+          "name": "Send SMS to Emergency Contacts",
+          "type": "n8n-nodes-base.twilio",
+          "typeVersion": 1,
+          "position": [450, 450]
+        },
+        {
+          "parameters": {
+            "operation": "create",
+            "table": "emergency_calls",
+            "columns": "callId, timestamp, symptoms, triageLevel, patientInfo, location, status",
+            "values": "={{$json[\"callId\"]}},={{$json[\"timestamp\"]}},={{$json[\"symptoms\"]}},RED,={{$json[\"patientInfo\"]}},={{$json[\"location\"]}},ACTIVE"
+          },
+          "name": "Log to Database",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [650, 300]
+        },
+        {
+          "parameters": {
+            "operation": "create",
+            "service": "911",
+            "callData": {
+              "location": "={{$json[\"location\"]}}",
+              "symptoms": "={{$json[\"symptoms\"]}}",
+              "callbackNumber": "={{$json[\"callbackNumber\"]}}"
+            }
+          },
+          "name": "Dispatch Emergency Services",
+          "type": "n8n-nodes-base.http",
+          "typeVersion": 1,
+          "position": [650, 450]
+        },
+        {
+          "parameters": {
+            "operation": "update",
+            "channel": "emergency-alerts",
+            "message": "🚨 *EMERGENCY ALERT* 🚨\n\n*Call ID:* {{$json[\"callId\"]}}\n*Time:* {{$json[\"timestamp\"]}}\n*Triage:* RED\n*Symptoms:* {{$json[\"symptoms\"]}}\n*Status:* Emergency services dispatched\n\n_AI Assistant is maintaining contact with patient_"
+          },
+          "name": "Post to Slack Emergency Channel",
+          "type": "n8n-nodes-base.slack",
+          "typeVersion": 1,
+          "position": [850, 300]
+        },
+        {
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={\"status\": \"emergency_initiated\", \"callId\": \"{{$json[\"callId\"]}}\", \"message\": \"Emergency protocols activated\"}"
+          },
+          "name": "Respond",
+          "type": "n8n-nodes-base.respondToWebhook",
+          "typeVersion": 1,
+          "position": [1050, 300]
+        }
+      ],
+      "connections": {
+        "Emergency Webhook": {
+          "main": [
+            [
+              {
+                "node": "Send Emergency Notification",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Send SMS to Emergency Contacts",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Send Emergency Notification": {
+          "main": [
+            [
+              {
+                "node": "Log to Database",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Send SMS to Emergency Contacts": {
+          "main": [
+            [
+              {
+                "node": "Dispatch Emergency Services",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log to Database": {
+          "main": [
+            [
+              {
+                "node": "Post to Slack Emergency Channel",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Dispatch Emergency Services": {
+          "main": [
+            [
+              {
+                "node": "Post to Slack Emergency Channel",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Post to Slack Emergency Channel": {
+          "main": [
+            [
+              {
+                "node": "Respond",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "ApneDoctors Appointment Scheduling",
+      "description": "Handles appointment scheduling requests from voice AI",
+      "nodes": [
+        {
+          "parameters": {
+            "httpMethod": "POST",
+            "path": "schedule-appointment",
+            "responseMode": "responseNode",
+            "options": {}
+          },
+          "name": "Appointment Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "typeVersion": 1,
+          "position": [250, 300]
+        },
+        {
+          "parameters": {
+            "operation": "get",
+            "table": "doctor_availability",
+            "where": "specialty = '{{$json[\"preferredSpecialty\"]}}' AND available = true"
+          },
+          "name": "Check Doctor Availability",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [450, 300]
+        },
+        {
+          "parameters": {
+            "operation": "findSlots",
+            "calendar": "doctors@apnedoctors.com",
+            "startDate": "={{$json[\"preferredDate\"]}}",
+            "duration": 30,
+            "count": 5
+          },
+          "name": "Find Available Slots",
+          "type": "n8n-nodes-base.googleCalendar",
+          "typeVersion": 1,
+          "position": [650, 300]
+        },
+        {
+          "parameters": {
+            "operation": "create",
+            "table": "appointments",
+            "columns": "callId, patientId, doctorId, appointmentTime, symptoms, status, createdAt",
+            "values": "={{$json[\"callId\"]}},={{$json[\"patientId\"]}},={{$json[\"doctorId\"]}},={{$json[\"selectedSlot\"]}},={{$json[\"symptoms\"]}},PENDING,={{$now}}"
+          },
+          "name": "Create Appointment Record",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [850, 300]
+        },
+        {
+          "parameters": {
+            "operation": "sendEmail",
+            "to": "={{$json[\"patientEmail\"]}}",
+            "subject": "Appointment Confirmation - ApneDoctors",
+            "html": "<h2>Your Appointment is Confirmed</h2><p>Dear {{$json[\"patientName\"]}},</p><p>Your appointment has been scheduled for:</p><ul><li><strong>Date:</strong> {{$json[\"appointmentDate\"]}}</li><li><strong>Time:</strong> {{$json[\"appointmentTime\"]}}</li><li><strong>Doctor:</strong> {{$json[\"doctorName\"]}}</li><li><strong>Location:</strong> {{$json[\"clinicLocation\"]}}</li></ul><p>Please arrive 10 minutes early.</p>"
+          },
+          "name": "Send Confirmation Email",
+          "type": "n8n-nodes-base.emailSend",
+          "typeVersion": 1,
+          "position": [1050, 300]
+        },
+        {
+          "parameters": {
+            "operation": "sendSms",
+            "to": "={{$json[\"patientPhone\"]}}",
+            "message": "Appointment confirmed for {{$json[\"appointmentDate\"]}} at {{$json[\"appointmentTime\"]}} with Dr. {{$json[\"doctorName\"]}}. Location: {{$json[\"clinicLocation\"]}}. Reply CANCEL to cancel."
+          },
+          "name": "Send SMS Confirmation",
+          "type": "n8n-nodes-base.twilio",
+          "typeVersion": 1,
+          "position": [1050, 450]
+        },
+        {
+          "parameters": {
+            "operation": "createEvent",
+            "calendar": "={{$json[\"doctorEmail\"]}}",
+            "summary": "Patient Appointment - {{$json[\"patientName\"]}}",
+            "start": "={{$json[\"appointmentDateTime\"]}}",
+            "end": "={{$json[\"appointmentEndTime\"]}}",
+            "description": "Symptoms: {{$json[\"symptoms\"]}}\nCall ID: {{$json[\"callId\"]}}\nTriage: {{$json[\"triageLevel\"]}}"
+          },
+          "name": "Add to Doctor Calendar",
+          "type": "n8n-nodes-base.googleCalendar",
+          "typeVersion": 1,
+          "position": [850, 450]
+        },
+        {
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={\"status\": \"appointment_scheduled\", \"appointmentId\": \"{{$json[\"appointmentId\"]}}\", \"appointmentTime\": \"{{$json[\"appointmentDateTime\"]}}\"}"
+          },
+          "name": "Respond",
+          "type": "n8n-nodes-base.respondToWebhook",
+          "typeVersion": 1,
+          "position": [1250, 300]
+        }
+      ],
+      "connections": {
+        "Appointment Webhook": {
+          "main": [
+            [
+              {
+                "node": "Check Doctor Availability",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Check Doctor Availability": {
+          "main": [
+            [
+              {
+                "node": "Find Available Slots",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Find Available Slots": {
+          "main": [
+            [
+              {
+                "node": "Create Appointment Record",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Create Appointment Record": {
+          "main": [
+            [
+              {
+                "node": "Send Confirmation Email",
+                "type": "main",
+                "index": 0
+              },
+              {
+                "node": "Add to Doctor Calendar",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Send Confirmation Email": {
+          "main": [
+            [
+              {
+                "node": "Respond",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Add to Doctor Calendar": {
+          "main": [
+            [
+              {
+                "node": "Send SMS Confirmation",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Send SMS Confirmation": {
+          "main": [
+            [
+              {
+                "node": "Respond",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "ApneDoctors Outbound Call Reminder",
+      "description": "Triggers outbound calls for appointment reminders via Fonoster",
+      "nodes": [
+        {
+          "parameters": {
+            "triggerTimes": {
+              "item": [
+                {
+                  "hour": 9,
+                  "minute": 0
+                },
+                {
+                  "hour": 15,
+                  "minute": 0
+                }
+              ]
+            }
+          },
+          "name": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "typeVersion": 1,
+          "position": [250, 300]
+        },
+        {
+          "parameters": {
+            "operation": "select",
+            "table": "appointments",
+            "where": "DATE(appointmentTime) = DATE(NOW() + INTERVAL '1 day') AND reminderSent = false"
+          },
+          "name": "Get Tomorrow's Appointments",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [450, 300]
+        },
+        {
+          "parameters": {
+            "operation": "makeCall",
+            "endpoint": "={{$env.FONOSTER_API_URL}}/calls",
+            "method": "POST",
+            "headers": {
+              "Authorization": "Bearer {{$env.FONOSTER_ACCESS_KEY}}",
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "from": "+1234567890",
+              "to": "={{$json[\"patientPhone\"]}}",
+              "webhook": "={{$env.VOICE_AI_BACKEND_URL}}/fonoster/inbound",
+              "context": {
+                "type": "outbound_reminder",
+                "appointmentId": "={{$json[\"appointmentId\"]}}",
+                "patientName": "={{$json[\"patientName\"]}}",
+                "appointmentTime": "={{$json[\"appointmentTime\"]}}",
+                "doctorName": "={{$json[\"doctorName\"]}}"
+              }
+            }
+          },
+          "name": "Initiate Call via Fonoster",
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 1,
+          "position": [650, 300]
+        },
+        {
+          "parameters": {
+            "operation": "update",
+            "table": "appointments",
+            "where": "appointmentId = '{{$json[\"appointmentId\"]}}'",
+            "set": "reminderSent = true, reminderSentAt = NOW()"
+          },
+          "name": "Mark Reminder Sent",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [850, 300]
+        },
+        {
+          "parameters": {
+            "operation": "log",
+            "table": "call_logs",
+            "columns": "appointmentId, callType, status, timestamp",
+            "values": "={{$json[\"appointmentId\"]}},REMINDER,INITIATED,={{$now}}"
+          },
+          "name": "Log Call",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [1050, 300]
+        }
+      ],
+      "connections": {
+        "Schedule Trigger": {
+          "main": [
+            [
+              {
+                "node": "Get Tomorrow's Appointments",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Get Tomorrow's Appointments": {
+          "main": [
+            [
+              {
+                "node": "Initiate Call via Fonoster",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Initiate Call via Fonoster": {
+          "main": [
+            [
+              {
+                "node": "Mark Reminder Sent",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Mark Reminder Sent": {
+          "main": [
+            [
+              {
+                "node": "Log Call",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "ApneDoctors Human Handoff",
+      "description": "Routes calls to human doctors when AI escalates",
+      "nodes": [
+        {
+          "parameters": {
+            "httpMethod": "POST",
+            "path": "human-handoff",
+            "responseMode": "responseNode",
+            "options": {}
+          },
+          "name": "Handoff Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "typeVersion": 1,
+          "position": [250, 300]
+        },
+        {
+          "parameters": {
+            "operation": "findOnCall",
+            "table": "doctors",
+            "where": "onCallStatus = true AND specialty = '{{$json[\"requiredSpecialty\"]}}'"
+          },
+          "name": "Find On-Call Doctor",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [450, 300]
+        },
+        {
+          "parameters": {
+            "operation": "sendNotification",
+            "to": "={{$json[\"doctorPhone\"]}}",
+            "message": "🔔 Patient handoff required\n\nCall ID: {{$json[\"callId\"]}}\nReason: {{$json[\"reason\"]}}\nTriage: {{$json[\"triageLevel\"]}}\nSymptoms: {{$json[\"symptoms\"]}}\n\nClick to accept: {{$env.DASHBOARD_URL}}/calls/{{$json[\"callId\"]}}"
+          },
+          "name": "Notify Doctor",
+          "type": "n8n-nodes-base.pushover",
+          "typeVersion": 1,
+          "position": [650, 300]
+        },
+        {
+          "parameters": {
+            "operation": "transfer",
+            "callId": "={{$json[\"callId\"]}}",
+            "transferTo": "={{$json[\"doctorExtension\"]}}",
+            "announceMessage": "Transferring you to a doctor now. Please hold."
+          },
+          "name": "Transfer Call",
+          "type": "n8n-nodes-base.httpRequest",
+          "typeVersion": 1,
+          "position": [850, 300]
+        },
+        {
+          "parameters": {
+            "operation": "create",
+            "table": "handoffs",
+            "columns": "callId, aiSummary, doctorId, timestamp, reason, status",
+            "values": "={{$json[\"callId\"]}},={{$json[\"summary\"]}},={{$json[\"doctorId\"]}},={{$now}},={{$json[\"reason\"]}},TRANSFERRED"
+          },
+          "name": "Log Handoff",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [1050, 300]
+        },
+        {
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={\"status\": \"handoff_complete\", \"doctorId\": \"{{$json[\"doctorId\"]}}\", \"doctorName\": \"{{$json[\"doctorName\"]}}\"}"
+          },
+          "name": "Respond",
+          "type": "n8n-nodes-base.respondToWebhook",
+          "typeVersion": 1,
+          "position": [1250, 300]
+        }
+      ],
+      "connections": {
+        "Handoff Webhook": {
+          "main": [
+            [
+              {
+                "node": "Find On-Call Doctor",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Find On-Call Doctor": {
+          "main": [
+            [
+              {
+                "node": "Notify Doctor",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Notify Doctor": {
+          "main": [
+            [
+              {
+                "node": "Transfer Call",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Transfer Call": {
+          "main": [
+            [
+              {
+                "node": "Log Handoff",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Log Handoff": {
+          "main": [
+            [
+              {
+                "node": "Respond",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "ApneDoctors Call Summary Logger",
+      "description": "Logs detailed call summaries for compliance and analytics",
+      "nodes": [
+        {
+          "parameters": {
+            "httpMethod": "POST",
+            "path": "call-summary",
+            "responseMode": "responseNode",
+            "options": {}
+          },
+          "name": "Summary Webhook",
+          "type": "n8n-nodes-base.webhook",
+          "typeVersion": 1,
+          "position": [250, 300]
+        },
+        {
+          "parameters": {
+            "operation": "insert",
+            "table": "call_summaries",
+            "columns": "callId, duration, triageLevel, symptoms, conversationHistory, metadata, timestamp",
+            "values": "={{$json[\"callId\"]}},={{$json[\"duration\"]}},={{$json[\"triageLevel\"]}},={{$json[\"symptoms\"]}},={{$json[\"conversationHistory\"]}},={{$json[\"metadata\"]}},={{$now}}"
+          },
+          "name": "Save to Database",
+          "type": "n8n-nodes-base.postgres",
+          "typeVersion": 1,
+          "position": [450, 300]
+        },
+        {
+          "parameters": {
+            "operation": "analyze",
+            "text": "={{$json[\"conversationHistory\"]}}",
+            "extractKeywords": true,
+            "sentiment": true
+          },
+          "name": "AI Analysis",
+          "type": "n8n-nodes-base.openAi",
+          "typeVersion": 1,
+          "position": [650, 300]
+        },
+        {
+          "parameters": {
+            "operation": "update",
+            "bucket": "call-recordings",
+            "key": "={{$json[\"callId\"]}}/summary.json",
+            "body": "={{JSON.stringify($json)}}"
+          },
+          "name": "Archive to S3",
+          "type": "n8n-nodes-base.aws",
+          "typeVersion": 1,
+          "position": [850, 300]
+        },
+        {
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={\"status\": \"logged\", \"callId\": \"{{$json[\"callId\"]}}\"}"
+          },
+          "name": "Respond",
+          "type": "n8n-nodes-base.respondToWebhook",
+          "typeVersion": 1,
+          "position": [1050, 300]
+        }
+      ],
+      "connections": {
+        "Summary Webhook": {
+          "main": [
+            [
+              {
+                "node": "Save to Database",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Save to Database": {
+          "main": [
+            [
+              {
+                "node": "AI Analysis",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "AI Analysis": {
+          "main": [
+            [
+              {
+                "node": "Archive to S3",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        },
+        "Archive to S3": {
+          "main": [
+            [
+              {
+                "node": "Respond",
+                "type": "main",
+                "index": 0
+              }
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}

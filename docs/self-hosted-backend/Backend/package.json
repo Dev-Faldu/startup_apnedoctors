@@ -1,0 +1,30 @@
+{
+  "name": "apnedoctors-voice-ai-windows",
+  "version": "1.0.0",
+  "description": "Windows-native voice AI backend for ApneDoctors",
+  "main": "voice-ai-backend-windows.js",
+  "scripts": {
+    "start": "node voice-ai-backend-windows.js",
+    "dev": "nodemon voice-ai-backend-windows.js",
+    "test": "curl http://localhost:3001/health"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "axios": "^1.6.0",
+    "@xenova/transformers": "^2.16.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "voice-ai",
+    "healthcare",
+    "windows",
+    "transformers.js",
+    "ollama",
+    "piper"
+  ],
+  "author": "ApneDoctors",
+  "license": "MIT"
+}

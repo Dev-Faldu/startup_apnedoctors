@@ -91,7 +91,7 @@ serve(async (req) => {
 
     console.log('Analyzing image frame, size:', imageBase64!.length);
 
-    const messages: any[] = [
+    const messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }> = [
       { role: 'system', content: LIVE_VISION_PROMPT },
       {
         role: 'user',
@@ -183,7 +183,7 @@ serve(async (req) => {
     if (sessionId && result.detections?.length > 0 && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        const detectionsToInsert = result.detections.map((d: any) => ({
+        const detectionsToInsert = result.detections.map((d: { type?: string; severity?: string; location?: string; confidence?: number }) => ({
           session_id: sessionId,
           detection_type: d.type,
           severity: d.severity,

@@ -106,7 +106,7 @@ serve(async (req) => {
     console.log("Generating live session report for session:", sessionId);
 
     // Build conversation context
-    const conversationText = conversation?.map((msg: any) => 
+    const conversationText = conversation?.map((msg: { role: string; content: string }) =>
       `${msg.role.toUpperCase()}: ${msg.content}`
     ).join('\n') || 'No conversation recorded';
 

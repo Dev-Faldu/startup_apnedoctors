@@ -13,7 +13,11 @@ export function sanitizeText(text: string | undefined | null, maxLength: number 
   if (!text || typeof text !== 'string') return '';
   
   // Remove null bytes and control characters (except newlines and tabs)
-  let sanitized = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  let sanitized = text.replace(
+    // eslint-disable-next-line no-control-regex -- intentional: strip control chars for security
+    /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g,
+    ''
+  );
   
   // Trim whitespace
   sanitized = sanitized.trim();
@@ -110,7 +114,7 @@ const conversationMessageSchema = z.object({
 export const liveTriageInputSchema = z.object({
   transcript: z.string().max(MAX_MESSAGE_LENGTH).optional().transform(val => sanitizeText(val, MAX_MESSAGE_LENGTH)),
   conversationHistory: z.array(conversationMessageSchema).max(MAX_CONVERSATION_HISTORY).default([]),
-  imageAnalysis: z.any().optional(),
+  imageAnalysis: z.unknown().optional(),
   sessionId: z.string().uuid().optional().nullable(),
 });
 

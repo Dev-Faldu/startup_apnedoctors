@@ -20,7 +20,7 @@ export interface ChatResponse {
   assistantMessage: string;
   state: string;
   triageLevel: 'GREEN' | 'AMBER' | 'RED' | null;
-  medicalData: Record<string, any>;
+  medicalData: Record<string, unknown>;
   shouldEnd: boolean;
 }
 
@@ -80,7 +80,7 @@ export class ExternalVoiceService {
   /**
    * Start a new voice session
    */
-  async startSession(metadata?: Record<string, any>): Promise<VoiceSession> {
+  async startSession(metadata?: Record<string, unknown>): Promise<VoiceSession> {
     const response = await fetch(`${this.baseUrl}/api/v1/session/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -105,7 +105,7 @@ export class ExternalVoiceService {
   /**
    * End current session
    */
-  async endSession(): Promise<{ medicalData: Record<string, any>; triageLevel: string | null }> {
+  async endSession(): Promise<{ medicalData: Record<string, unknown>; triageLevel: string | null }> {
     if (!this.sessionId) {
       throw new Error('No active session');
     }

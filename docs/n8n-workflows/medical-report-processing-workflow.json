@@ -1,0 +1,51 @@
+{
+  "name": "ApneDoctors – Medical Report Processing",
+  "nodes": [
+    {
+      "name": "Report Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [200, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "report-processing",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "name": "Prepare Report Data",
+      "type": "n8n-nodes-base.set",
+      "position": [420, 300],
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "reportId", "value": "={{$json.reportId}}" },
+            { "name": "summary", "value": "={{JSON.stringify($json.clinicalFindings)}}"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Notify Patient",
+      "type": "n8n-nodes-base.emailSend",
+      "position": [640, 300],
+      "parameters": {
+        "to": "={{$json.patientData.email}}",
+        "subject": "Your Medical Report Is Ready",
+        "text": "Your report is now available in ApneDoctors."
+      }
+    },
+    {
+      "name": "Return Status",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [860, 300],
+      "parameters": {
+        "responseBody": "{ \"processed\": true }"
+      }
+    }
+  ],
+  "connections": {
+    "Report Webhook": { "main": [[{ "node": "Prepare Report Data", "type": "main" }]] },
+    "Prepare Report Data": { "main": [[{ "node": "Notify Patient", "type": "main" }]] },
+    "Notify Patient": { "main": [[{ "node": "Return Status", "type": "main" }]] }
+  }
+}

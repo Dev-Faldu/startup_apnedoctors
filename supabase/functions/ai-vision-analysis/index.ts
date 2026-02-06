@@ -67,7 +67,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const messages: any[] = [
+    const messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }> = [
       { role: "system", content: VISION_SYSTEM_PROMPT }
     ];
 

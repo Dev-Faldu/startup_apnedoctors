@@ -130,18 +130,18 @@ export const useLiveCamera = () => {
       setIsActive(true);
       console.log('Camera started successfully');
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Camera error:', err);
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      const e = err as { name?: string; message?: string };
+      if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
         setPermissionDenied(true);
         setError('Camera permission denied. Please allow camera access in your browser settings.');
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
         setError('No camera found. Please connect a camera and try again.');
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+      } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
         setError('Camera is in use by another application. Please close other apps using the camera.');
       } else {
-        setError(`Camera error: ${err.message || 'Unknown error'}`);
+        setError(`Camera error: ${e.message ?? 'Unknown error'}`);
       }
       
       setIsActive(false);

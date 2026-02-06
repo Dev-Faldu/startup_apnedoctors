@@ -32,7 +32,7 @@ export function ContextStep({ value, onContinue }: ContextStepProps) {
   const [showMedications, setShowMedications] = useState(false);
   const [showAllergies, setShowAllergies] = useState(false);
 
-  const updateContext = (key: keyof ContextFactors, value: any) => {
+  const updateContext = (key: keyof ContextFactors, value: ContextFactors[keyof ContextFactors]) => {
     setContext(prev => ({ ...prev, [key]: value }));
   };
 
