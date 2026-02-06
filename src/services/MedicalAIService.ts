@@ -151,6 +151,31 @@ export interface ComprehensiveReport {
 }
 
 // API Service class
+// Service URLs - Environment-based configuration
+const VOICE_BACKEND_URL = import.meta.env.VITE_VOICE_BACKEND_URL || 'http://localhost:54112';
+const N8N_BASE_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook';
+
+// N8N Webhook URLs - Configure these in your n8n instance
+const N8N_WEBHOOKS = {
+  symptomAnalysis: `${N8N_BASE_URL}/symptom-analysis`,
+  userOnboarding: `${N8N_BASE_URL}/user-onboarding`,
+  emergencyAlert: `${N8N_BASE_URL}/emergency-alert`,
+  reportProcessing: `${N8N_BASE_URL}/report-processing`,
+  appointmentScheduling: `${N8N_BASE_URL}/appointment-booking`,
+  paymentProcessing: `${N8N_BASE_URL}/payment-webhook`,
+  notificationService: `${N8N_BASE_URL}/notifications`,
+  analyticsProcessing: `${N8N_BASE_URL}/analytics`,
+  complianceReporting: `${N8N_BASE_URL}/compliance`,
+  doctorVerification: `${N8N_BASE_URL}/doctor-verification`
+};
+
+// Production webhook URLs (update these when deploying n8n)
+const PRODUCTION_WEBHOOKS = {
+  userOnboarding: `${N8N_BASE_URL}/user-onboarding`,
+  emergencyAlert: `${N8N_BASE_URL}/emergency-alert`,
+  reportProcessing: `${N8N_BASE_URL}/report-processing`
+};
+
 export class MedicalAIService {
   /**
    * Perform YOLO-style object detection on a medical image
@@ -184,9 +209,55 @@ export class MedicalAIService {
   }
 
   /**
-   * Analyze symptoms and provide triage assessment
+   * Analyze symptoms and provide triage assessment (via n8n webhook)
    */
   static async analyzeSymptoms(params: {
+    symptoms: string;
+    painLevel?: number;
+    duration?: string;
+    bodyPart?: string;
+    additionalInfo?: string;
+    patientHistory?: string;
+  }): Promise<SymptomAnalysisResult> {
+    try {
+      const response = await fetch("https://devxfaldu.app.n8n.cloud/webhook-test/ca302449-68e0-4510-913b-7d7635451aa5", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          bodyPart: params.bodyPart || "",
+          painLevel: params.painLevel || 0,
+          duration: params.duration || "",
+          symptoms: params.symptoms,
+          additionalInfo: params.additionalInfo || "",
+          patientHistory: params.patientHistory || ""
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Webhook analysis failed:", error);
+      // Fallback to Supabase function if webhook fails
+      console.log("Falling back to Supabase function...");
+      const { data, error: supabaseError } = await supabase.functions.invoke("ai-symptom-analysis", {
+        body: params,
+      });
+
+      if (supabaseError) throw new Error(supabaseError.message);
+      return data;
+    }
+  }
+
+  /**
+   * Analyze symptoms using Supabase function (legacy/fallback)
+   */
+  static async analyzeSymptomsLegacy(params: {
     symptoms: string;
     painLevel?: number;
     duration?: string;
@@ -200,6 +271,193 @@ export class MedicalAIService {
 
     if (error) throw new Error(error.message);
     return data;
+  }
+
+  // ===========================================
+  // N8N INTEGRATION METHODS
+  // ===========================================
+
+  /**
+   * Trigger user onboarding workflow via n8n
+   */
+  static async triggerUserOnboarding(params: {
+    userId: string;
+    email: string;
+    name: string;
+    signupSource?: string;
+  }): Promise<{ onboarding: string; success: boolean }> {
+    try {
+      const webhookUrl = process.env.NODE_ENV === 'production'
+        ? PRODUCTION_WEBHOOKS.userOnboarding
+        : N8N_WEBHOOKS.userOnboarding;
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params)
+      });
+
+      if (!response.ok) throw new Error(`User onboarding failed: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("User onboarding failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send emergency alert via n8n workflow
+   */
+  static async sendEmergencyAlert(params: {
+    patientId: string;
+    symptoms: string;
+    triageLevel: string;
+    location?: string;
+    contactInfo: string;
+  }): Promise<{ success: boolean; alertId: string }> {
+    try {
+      const webhookUrl = process.env.NODE_ENV === 'production'
+        ? PRODUCTION_WEBHOOKS.emergencyAlert
+        : N8N_WEBHOOKS.emergencyAlert;
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params)
+      });
+
+      if (!response.ok) throw new Error(`Emergency alert failed: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Emergency alert failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process medical report through n8n workflow
+   */
+  static async processMedicalReport(params: {
+    reportId: string;
+    patientData: any;
+    clinicalFindings: any;
+    recommendations: any;
+    doctorReview?: boolean;
+  }): Promise<{ processed: boolean; distribution: string[] }> {
+    try {
+      const webhookUrl = process.env.NODE_ENV === 'production'
+        ? PRODUCTION_WEBHOOKS.reportProcessing
+        : N8N_WEBHOOKS.reportProcessing;
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params)
+      });
+
+      if (!response.ok) throw new Error(`Report processing failed: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Report processing failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send notifications via n8n
+   */
+  static async sendNotification(params: {
+    type: "email" | "sms" | "push";
+    recipient: string;
+    template: string;
+    data: any;
+    priority?: "low" | "normal" | "high";
+  }): Promise<{ sent: boolean; messageId: string }> {
+    try {
+      const response = await fetch(N8N_WEBHOOKS.notificationService, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params)
+      });
+
+      if (!response.ok) throw new Error(`Notification failed: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Notification failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process analytics data via n8n
+   */
+  static async processAnalytics(params: {
+    eventType: string;
+    userId?: string;
+    sessionId?: string;
+    data: any;
+    timestamp: string;
+  }): Promise<{ processed: boolean; insights?: any }> {
+    try {
+      const response = await fetch(N8N_WEBHOOKS.analyticsProcessing, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params)
+      });
+
+      if (!response.ok) throw new Error(`Analytics processing failed: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Analytics processing failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Doctor verification workflow via n8n
+   */
+  static async verifyDoctor(params: {
+    doctorId: string;
+    documents: string[];
+    credentials: any;
+    verificationType: "initial" | "renewal" | "update";
+  }): Promise<{ verified: boolean; status: string; nextSteps: string[] }> {
+    try {
+      const response = await fetch(N8N_WEBHOOKS.doctorVerification, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params)
+      });
+
+      if (!response.ok) throw new Error(`Doctor verification failed: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Doctor verification failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Compliance reporting via n8n
+   */
+  static async generateComplianceReport(params: {
+    reportType: "hipaa" | "audit" | "regulatory";
+    dateRange: { start: string; end: string };
+    filters?: any;
+  }): Promise<{ reportId: string; generated: boolean; downloadUrl?: string }> {
+    try {
+      const response = await fetch(N8N_WEBHOOKS.complianceReporting, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params)
+      });
+
+      if (!response.ok) throw new Error(`Compliance report failed: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Compliance report failed:", error);
+      throw error;
+    }
   }
 
   /**

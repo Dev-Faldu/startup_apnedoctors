@@ -177,12 +177,12 @@ aws ec2 run-instances --instance-type g5.2xlarge ...
 gcloud compute instances create voice-ai --accelerator type=nvidia-tesla-t4,count=1 ...
 ```
 
-## Connecting to Lovable Frontend
+## Connecting to ApneDoctors Frontend
 
-Set your backend URL in Lovable:
+Set your backend URL in your frontend:
 
 ```typescript
-// In Lovable project
+// In ApneDoctors frontend
 const VOICE_BACKEND_URL = 'https://your-voice-backend.com';
 
 // Use ExternalVoiceService

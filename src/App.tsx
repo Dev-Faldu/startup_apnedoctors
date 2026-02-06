@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
+import VoiceBackendTest from "./components/VoiceBackendTest";
 
 const queryClient = new QueryClient();
 
@@ -78,14 +79,15 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/settings" 
+            <Route
+              path="/settings"
               element={
                 <ProtectedRoute>
                   <Settings />
                 </ProtectedRoute>
-              } 
+              }
             />
+            <Route path="/voice-test" element={<VoiceBackendTest />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -107,7 +107,7 @@ Based on the description, provide a preliminary assessment guide in JSON format.
       });
     }
 
-    console.log("Calling Lovable AI for vision analysis...");
+    console.log("Calling ApneDoctors AI for vision analysis...");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

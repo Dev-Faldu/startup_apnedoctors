@@ -47,7 +47,7 @@ serve(async (req) => {
 
     console.log("Processing object detection request...");
 
-    // Use Lovable AI (Gemini) for vision-based object detection
+    // Use ApneDoctors AI (Gemini) for vision-based object detection
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {

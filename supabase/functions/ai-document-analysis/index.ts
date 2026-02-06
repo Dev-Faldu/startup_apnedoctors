@@ -151,7 +151,7 @@ ${documentContent}
 Please analyze this medical document and provide a comprehensive clinical summary following the exact JSON structure specified.
 `;
 
-    console.log("Calling Lovable AI for document analysis...");
+    console.log("Calling ApneDoctors AI for document analysis...");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

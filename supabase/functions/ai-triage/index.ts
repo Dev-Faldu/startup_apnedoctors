@@ -70,7 +70,7 @@ ADDITIONAL INFORMATION: ${additionalInfo || "None"}
 Please provide a comprehensive orthopedic triage assessment following the required JSON format.
 `;
 
-    console.log("Calling Lovable AI for triage analysis...");
+    console.log("Calling ApneDoctors AI for triage analysis...");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

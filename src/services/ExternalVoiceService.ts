@@ -1,6 +1,6 @@
 /**
  * ExternalVoiceService - Integration layer for self-hosted voice AI backend
- * Connects Lovable frontend to your GPU server running the voice pipeline
+ * Connects ApneDoctors frontend to your GPU server running the voice pipeline
  */
 
 export interface VoiceSession {

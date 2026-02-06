@@ -95,7 +95,7 @@ ${JSON.stringify(visionData, null, 2)}
 Please generate a professional medical report in the required JSON format.
 `;
 
-    console.log("Calling Lovable AI for report generation...");
+    console.log("Calling ApneDoctors AI for report generation...");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
